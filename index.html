@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wala Tok - Premium Short Videos</title>
+  <title>Wala Tok</title>
   <style>
     :root {
       --bg-dark: #030303;
@@ -14,306 +14,59 @@
       --text-muted: rgba(255, 255, 255, 0.6);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body, html { height: 100%; background-color: var(--bg-dark); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; color: var(--text-main); }
 
-    body, html {
-      height: 100%;
-      background-color: var(--bg-dark);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden;
-      color: var(--text-main);
-    }
+    .app-container { height: 100vh; width: 100vw; max-width: 480px; margin: 0 auto; position: relative; background: #000; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
 
-    .app-container {
-      height: 100vh;
-      width: 100vw;
-      max-width: 480px;
-      margin: 0 auto;
-      position: relative;
-      background: #000;
-      box-shadow: 0 0 30px rgba(0,0,0,0.8);
-    }
+    .brand-header { position: absolute; top: 0; left: 0; width: 100%; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+    .brand-logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(45deg, var(--primary-pink), var(--accent-neon)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .profile-trigger { background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s; }
+    .profile-trigger:hover { background: var(--primary-pink); border-color: var(--primary-pink); }
 
-    .brand-header {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 60px;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
-      z-index: 20;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-    }
+    .feed-container { height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    .feed-container::-webkit-scrollbar { display: none; }
 
-    .brand-logo {
-      font-size: 1.4rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      background: linear-gradient(45deg, var(--primary-pink), var(--accent-neon));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+    .video-card { height: 100vh; width: 100%; scroll-snap-align: start; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
+    video { width: 100%; height: 100%; object-fit: cover; }
 
-    .profile-trigger {
-      background: rgba(255,255,255,0.1);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border: 1px solid rgba(255,255,255,0.2);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .profile-trigger:hover {
-      background: var(--primary-pink);
-      border-color: var(--primary-pink);
-    }
+    .bottom-meta { position: absolute; bottom: 30px; left: 16px; right: 80px; z-index: 15; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
+    .user-handle { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; color: #fff; display: flex; align-items: center; gap: 5px; }
+    .user-handle::before { content: '⚡'; font-size: 0.9rem; }
+    .video-caption { font-size: 0.92rem; line-height: 1.4; color: rgba(255,255,255,0.9); margin-bottom: 12px; }
 
-    .feed-container {
-      height: 100%;
-      overflow-y: scroll;
-      scroll-snap-type: y mandatory;
-      scroll-behavior: smooth;
-    }
-    .feed-container::-webkit-scrollbar {
-      display: none;
-    }
+    .sidebar-actions { position: absolute; right: 12px; bottom: 100px; z-index: 15; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+    .action-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+    .action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(30, 30, 30, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .action-item:hover .action-btn { transform: scale(1.1); }
+    .action-btn.liked { background: var(--primary-pink); color: white; border-color: var(--primary-pink); animation: pop 0.3s ease-in-out; }
+    .action-count { font-size: 0.75rem; font-weight: 600; margin-top: 5px; color: #fff; }
 
-    .video-card {
-      height: 100vh;
-      width: 100%;
-      scroll-snap-align: start;
-      position: relative;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .bottom-meta {
-      position: absolute;
-      bottom: 30px;
-      left: 16px;
-      right: 80px;
-      z-index: 15;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.7);
-    }
-
-    .user-handle {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .user-handle::before {
-      content: '⚡';
-      font-size: 0.9rem;
-    }
-
-    .video-caption {
-      font-size: 0.92rem;
-      line-height: 1.4;
-      color: rgba(255,255,255,0.9);
-      margin-bottom: 12px;
-    }
-
-    .sidebar-actions {
-      position: absolute;
-      right: 12px;
-      bottom: 100px;
-      z-index: 15;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 22px;
-    }
-
-    .action-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .action-btn {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(30, 30, 30, 0.4);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      transition: transform 0.2s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-    .action-item:hover .action-btn {
-      transform: scale(1.1);
-    }
-    .action-btn.liked {
-      background: var(--primary-pink);
-      color: white;
-      border-color: var(--primary-pink);
-      animation: pop 0.3s ease-in-out;
-    }
-
-    .action-count {
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-top: 5px;
-      color: #fff;
-    }
-
-    .comment-drawer {
-      position: absolute;
-      bottom: -100%;
-      left: 0;
-      width: 100%;
-      height: 60%;
-      background: var(--surface-card);
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
-      z-index: 30;
-      transition: bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-    }
-    .comment-drawer.open {
-      bottom: 0;
-    }
-
-    .drawer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 15px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
+    .comment-drawer { position: absolute; bottom: -100%; left: 0; width: 100%; height: 60%; background: var(--surface-card); border-top-left-radius: 16px; border-top-right-radius: 16px; z-index: 30; transition: bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1); padding: 20px; display: flex; flex-direction: column; }
+    .comment-drawer.open { bottom: 0; }
+    .drawer-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .drawer-header h3 { font-size: 1rem; font-weight: 700; }
     .close-drawer { font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
-
-    .comments-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 15px 0;
-    }
-    .comment-node {
-      margin-bottom: 14px;
-      font-size: 0.9rem;
-    }
+    .comments-list { flex: 1; overflow-y: auto; padding: 15px 0; }
+    .comment-node { margin-bottom: 14px; font-size: 0.9rem; }
     .comment-user { font-weight: 700; color: var(--accent-neon); margin-bottom: 2px;}
     .comment-body { color: rgba(255,255,255,0.85); }
 
-    .comment-input-area {
-      display: flex;
-      gap: 10px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .comment-input-area input {
-      flex: 1;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1);
-      padding: 12px;
-      border-radius: 25px;
-      color: white;
-      outline: none;
-      font-size: 0.9rem;
-    }
-    .comment-input-area button {
-      background: var(--primary-pink);
-      color: white;
-      border: none;
-      padding: 0 18px;
-      border-radius: 25px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+    .comment-input-area { display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .comment-input-area input { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 25px; color: white; outline: none; font-size: 0.9rem; }
+    .comment-input-area button { background: var(--primary-pink); color: white; border: none; padding: 0 18px; border-radius: 25px; font-weight: 600; cursor: pointer; }
 
-    .profile-modal {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(10px);
-      z-index: 40;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      visibility: hidden;
-      opacity: 0;
-      transition: all 0.3s;
-    }
-    .profile-modal.visible {
-      visibility: visible;
-      opacity: 1;
-    }
-    .modal-card {
-      background: var(--surface-card);
-      border-radius: 16px;
-      padding: 25px;
-      width: 100%;
-      border: 1px solid rgba(255,255,255,0.1);
-    }
+    .profile-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 40; display: flex; align-items: center; justify-content: center; padding: 20px; visibility: hidden; opacity: 0; transition: all 0.3s; }
+    .profile-modal.visible { visibility: visible; opacity: 1; }
+    .modal-card { background: var(--surface-card); border-radius: 16px; padding: 25px; width: 100%; border: 1px solid rgba(255,255,255,0.1); }
     .modal-card h3 { margin-bottom: 10px; font-size: 1.2rem; }
     .modal-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
-    .modal-card input {
-      width: 100%;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 12px;
-      border-radius: 8px;
-      color: white;
-      margin-bottom: 15px;
-      outline: none;
-    }
-    .modal-card button {
-      width: 100%;
-      background: linear-gradient(45deg, var(--primary-pink), var(--accent-neon));
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-    }
+    .modal-card input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; outline: none; }
+    .modal-card button { width: 100%; background: linear-gradient(45deg, var(--primary-pink), var(--accent-neon)); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
 
-    .loading-state {
-      text-align: center;
-      padding-top: 45vh;
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      letter-spacing: 1px;
-    }
+    .loading-state { text-align: center; padding-top: 45vh; font-size: 1.1rem; color: var(--text-muted); letter-spacing: 1px; }
 
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
-      100% { transform: scale(1); }
-    }
+    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
   </style>
 </head>
 <body>
@@ -335,7 +88,7 @@
       </div>
       <div class="comments-list" id="commentsListContainer"></div>
       <div class="comment-input-area">
-        <input type="text" id="newCommentInput" placeholder="Add a sweet comment...">
+        <input type="text" id="newCommentInput" placeholder="Add a comment...">
         <button onclick="submitComment()">Post</button>
       </div>
     </div>
@@ -352,8 +105,7 @@
 
   <script>
     /**
-     * CONFIGURATIONS
-     * Paste your authoritative Telegram Bot token and Google Apps Script Webapp link here.
+     * CONFIGURATIONS - ඔයාගේ විස්තර මෙතනට දාන්න
      */
     const TELEGRAM_BOT_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN_HERE"; 
     const APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_DEPLOY_WEB_APP_URL_HERE";
@@ -373,8 +125,7 @@
       const btn = document.getElementById('saveProfileBtn');
       if(inputVal) {
         userHandle = inputVal.replace(/[^a-zA-Z0-9_]/g, ""); 
-        
-        btn.innerText = "Registering in Database...";
+        btn.innerText = "Registering...";
         btn.disabled = true;
 
         try {
@@ -383,7 +134,7 @@
             document.getElementById('profileBtn').innerText = "@" + userHandle;
             toggleProfileModal(false);
         } catch(e) {
-            console.error("Failed to sync profile with database");
+            console.error("Failed to sync profile");
         } finally {
             btn.innerText = "Save Profile Handle";
             btn.disabled = false;
@@ -391,6 +142,7 @@
       }
     }
 
+    // Cloudflare නැතුව Telegram එකෙන් direct link එක HTML එකටම ගන්නවා (Limit පනින්නේ නෑ)
     async function fetchDirectTelegramStreamUrl(fileId) {
       try {
         const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
@@ -399,7 +151,7 @@
           return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${data.result.file_path}`;
         }
       } catch (error) {
-        console.error("Direct resolution failed:", error);
+        console.error("Fetch failed", error);
       }
       return null;
     }
@@ -412,7 +164,7 @@
         document.getElementById('loader').style.display = 'none';
 
         if(videos.length === 0) {
-          feedContainer.innerHTML = '<div class="loading-state">Feed is empty. Check moderation panel!</div>';
+          feedContainer.innerHTML = '<div class="loading-state">Feed is empty. Check admin panel!</div>';
           return;
         }
 
@@ -422,7 +174,7 @@
           card.setAttribute('data-id', item['Video ID']);
 
           card.innerHTML = `
-            <div class="loading-state" style="position:absolute; z-index:1; padding-top:0;">Resolving Media Pipeline...</div>
+            <div class="loading-state" style="position:absolute; z-index:1; padding-top:0;">Resolving Media...</div>
             <video loop playsinline onclick="toggleVideoPlayback(this)"></video>
             
             <div class="bottom-meta">
@@ -473,7 +225,7 @@
 
       } catch (err) {
         console.error("Initialization failed:", err);
-        document.getElementById('loader').innerText = "Network pipeline synchronization error.";
+        document.getElementById('loader').innerText = "Network error.";
       }
     }
 
@@ -490,19 +242,15 @@
       try {
         const res = await fetch(`${APPS_SCRIPT_URL}?action=likeVideo&id=${encodeURIComponent(videoId)}`);
         const result = await res.json();
-        if(result.success) {
-          counter.innerText = result.likes;
-        }
-      } catch(e) {
-        console.error("Could not register vote metric");
-      }
+        if(result.success) { counter.innerText = result.likes; }
+      } catch(e) { console.error("Vote failed"); }
     }
 
     async function openCommentDrawer(videoId) {
       currentActiveVideoId = videoId;
       toggleCommentDrawer(true);
       const listContainer = document.getElementById('commentsListContainer');
-      listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">Syncing conversations...</div>';
+      listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">Loading...</div>';
 
       try {
         const res = await fetch(`${APPS_SCRIPT_URL}?action=getComments&id=${encodeURIComponent(videoId)}`);
@@ -510,7 +258,7 @@
         listContainer.innerHTML = '';
         
         if(comments.length === 0) {
-          listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:20px;">Be the first to share your thought!</div>';
+          listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:20px;">Be the first to comment!</div>';
           return;
         }
 
@@ -521,7 +269,7 @@
           listContainer.appendChild(div);
         });
       } catch(e) {
-        listContainer.innerHTML = '<div style="color:red; font-size:0.85rem;">Failed to fetch channel logs.</div>';
+        listContainer.innerHTML = '<div style="color:red; font-size:0.85rem;">Error loading comments.</div>';
       }
     }
 
@@ -546,9 +294,7 @@
 
       try {
         await fetch(`${APPS_SCRIPT_URL}?action=addComment&id=${encodeURIComponent(currentActiveVideoId)}&username=${encodeURIComponent(userHandle)}&comment=${encodeURIComponent(text)}`);
-      } catch (e) {
-        console.error("Sync log error:", e);
-      }
+      } catch (e) { console.error("Comment failed"); }
     }
 
     window.addEventListener('DOMContentLoaded', initializeWalaTokFeed);
