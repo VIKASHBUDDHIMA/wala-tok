@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Video Trimmer & Cropper</title>
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
@@ -70,7 +70,7 @@
     const CHAT_ID = "-1003754232314";     // උදා: @mychannel හෝ -100123456789
 
     const { FFmpeg } = FFmpegWASM;
-    const { fetchFile, toBlobURL } = FFmpegUtil; // toBlobURL එක ගත්තේ Worker Error එක හදන්නයි
+    const { fetchFile, toBlobURL } = FFmpegUtil;
     const ffmpeg = new FFmpeg();
 
     const video = document.getElementById('previewVideo');
@@ -84,7 +84,6 @@
 
     function logMessage(msg) { document.getElementById('log').innerHTML = msg; }
 
-    // 1. Load Video (Bypass COEP)
     document.getElementById('loadBtn').addEventListener('click', async () => {
         const url = document.getElementById('videoUrl').value;
         if (!url) return alert("ලින්ක් එකක් දෙන්න!");
@@ -127,7 +126,6 @@
         }
     });
 
-    // 2. Dual Slider (Trim)
     function updateSliders() {
         let startVal = parseFloat(startSlider.value);
         let endVal = parseFloat(endSlider.value);
@@ -141,7 +139,6 @@
     startSlider.addEventListener('input', updateSliders);
     endSlider.addEventListener('input', updateSliders);
 
-    // 3. Crop Overlay
     function updateCropBox() {
         cropOverlay.style.top = document.getElementById('cTop').value + "%";
         cropOverlay.style.bottom = document.getElementById('cBot').value + "%";
@@ -150,7 +147,6 @@
     }
     ['cTop', 'cBot', 'cLeft', 'cRight'].forEach(id => document.getElementById(id).addEventListener('input', updateCropBox));
 
-    // 4. Process and Upload (Directly to Telegram)
     document.getElementById('processBtn').addEventListener('click', async () => {
         if(!videoBlobData) return alert("වීඩියෝ දත්ත හමුනොවුනි!");
         
@@ -173,9 +169,9 @@
         try {
             logMessage("⚙️ FFmpeg පද්ධතිය සූදානම් කරමින්...");
             
-            // 💡 WORKER ERROR FIX: Load modules via local Blob URLs instead of directly from unpkg
+            // 💡 CORS ERROR FIX: unpkg වෙනුවට jsdelivr භාවිතා කිරීම
             if (!ffmpeg.loaded) {
-                const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+                const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
                 await ffmpeg.load({
                     coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
                     wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
@@ -201,7 +197,6 @@
             const fileData = await ffmpeg.readFile('output.mp4');
             const outputBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
 
-            // 💡 Direct Telegram API Upload
             const formData = new FormData();
             formData.append("chat_id", CHAT_ID);
             formData.append("video", outputBlob, "edited_video.mp4");
