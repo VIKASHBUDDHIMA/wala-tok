@@ -15,14 +15,10 @@
         button:hover { background: #00a8cc; }
         button:disabled { background: #555; color: #888; cursor: not-allowed; }
         
-        /* Video Preview Area */
         .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; display: none; }
         video { width: 100%; display: block; }
-        
-        /* Crop Overlay Box */
         .crop-overlay { position: absolute; top: 0; bottom: 0; left: 0; right: 0; border: 2px dashed #00d2ff; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); transition: 0.1s; }
 
-        /* CapCut Style Dual Slider */
         .range-container { position: relative; height: 40px; margin: 20px 0; display: none; }
         .range-track { position: absolute; width: 100%; height: 8px; background: #333; top: 50%; transform: translateY(-50%); border-radius: 4px; }
         .range-fill { position: absolute; height: 8px; background: #00d2ff; top: 50%; transform: translateY(-50%); border-radius: 4px; }
@@ -69,11 +65,12 @@
 </div>
 
 <script>
-    // ⚠️ මතක ඇතුව ඔබේ Worker ලින්ක් එක මෙතනට දාන්න
-    const WORKER_URL = "https://videofootele.rathuuweb.workers.dev"; 
+    // ⚠️ ඔබේ Telegram Bot Token සහ Channel ID මෙතැනට දාන්න
+    const BOT_TOKEN = "8974378669:AAE3fxJa-OdGUi9HXiKkPu9b7SC8QeUXp4Q"; // උදා: 7123456789:AAGh...
+    const CHAT_ID = "-1003754232314";     // උදා: @mychannel හෝ -100123456789
 
     const { FFmpeg } = FFmpegWASM;
-    const { fetchFile } = FFmpegUtil;
+    const { fetchFile, toBlobURL } = FFmpegUtil; // toBlobURL එක ගත්තේ Worker Error එක හදන්නයි
     const ffmpeg = new FFmpeg();
 
     const video = document.getElementById('previewVideo');
@@ -82,12 +79,12 @@
     const trimFill = document.getElementById('trimFill');
     const cropOverlay = document.getElementById('cropOverlay');
     
-    let videoBlobData = null; // To store downladed video data
+    let videoBlobData = null; 
     let videoDuration = 0;
 
     function logMessage(msg) { document.getElementById('log').innerHTML = msg; }
 
-    // 1. Load Video from TikTok using Blob proxy to bypass COEP/CORS
+    // 1. Load Video (Bypass COEP)
     document.getElementById('loadBtn').addEventListener('click', async () => {
         const url = document.getElementById('videoUrl').value;
         if (!url) return alert("ලින්ක් එකක් දෙන්න!");
@@ -97,23 +94,17 @@
         logMessage("⏳ TikTok API එකෙන් වීඩියෝව සොයමින් පවතී...");
 
         try {
-            // Get Direct MP4 URL via TikWM
             const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
             const data = await res.json();
             
             if(data.code !== 0 || !data.data.play) throw new Error("TikTok වීඩියෝව සොයාගත නොහැක.");
             const directVideoUrl = data.data.play;
 
-            logMessage("⏳ ආරක්ෂිතව වීඩියෝ දත්ත බ්‍රවුසරයට බාගත කරමින් පවතී...\n(මෙයට තත්පර කිහිපයක් ගතවේ)");
-
-            // Fetch video as BLOB to bypass COEP / NotSameOrigin policy
+            logMessage("⏳ වීඩියෝව බ්‍රවුසරයට බාගත කරමින් පවතී...");
             const videoFetch = await fetch(directVideoUrl);
             videoBlobData = await videoFetch.blob();
             
-            // Create Local Object URL
-            const localVideoUrl = URL.createObjectURL(videoBlobData);
-
-            video.src = localVideoUrl;
+            video.src = URL.createObjectURL(videoBlobData);
             document.getElementById('videoWrapper').style.display = 'block';
             
             video.onloadedmetadata = () => {
@@ -127,67 +118,53 @@
                 document.getElementById('cropControls').style.display = 'grid';
                 document.getElementById('processBtn').style.display = 'block';
                 updateSliders();
-                logMessage("✅ වීඩියෝව සාර්ථකව සූදානම් කළා! දැන් Trim සහ Crop කරන්න.");
+                logMessage("✅ වීඩියෝව සූදානම්! දැන් Trim සහ Crop කරන්න.");
             };
         } catch (e) {
-            logMessage("❌ දෝෂයක්: " + e.message + "\nකරුණාකර නැවත උත්සාහ කරන්න.");
+            logMessage("❌ දෝෂයක්: " + e.message);
         } finally {
             loadBtn.disabled = false;
         }
     });
 
-    // 2. Dual Slider Logic (Trim)
+    // 2. Dual Slider (Trim)
     function updateSliders() {
         let startVal = parseFloat(startSlider.value);
         let endVal = parseFloat(endSlider.value);
+        if (startVal >= endVal) { startSlider.value = endVal - 0.5; startVal = endVal - 0.5; }
         
-        if (startVal >= endVal) {
-            startSlider.value = endVal - 0.5;
-            startVal = endVal - 0.5;
-        }
-        
-        const startPercent = (startVal / videoDuration) * 100;
-        const endPercent = (endVal / videoDuration) * 100;
-        
-        trimFill.style.left = startPercent + "%";
-        trimFill.style.width = (endPercent - startPercent) + "%";
+        trimFill.style.left = (startVal / videoDuration) * 100 + "%";
+        trimFill.style.width = ((endVal - startVal) / videoDuration) * 100 + "%";
         document.getElementById('timeDisplay').innerText = `Trim: ${startVal.toFixed(1)}s - ${endVal.toFixed(1)}s`;
-        
         video.currentTime = startVal;
     }
     startSlider.addEventListener('input', updateSliders);
     endSlider.addEventListener('input', updateSliders);
 
-    // 3. Crop Visual Overlay Logic
+    // 3. Crop Overlay
     function updateCropBox() {
-        const t = document.getElementById('cTop').value;
-        const b = document.getElementById('cBot').value;
-        const l = document.getElementById('cLeft').value;
-        const r = document.getElementById('cRight').value;
-        
-        cropOverlay.style.top = t + "%";
-        cropOverlay.style.bottom = b + "%";
-        cropOverlay.style.left = l + "%";
-        cropOverlay.style.right = r + "%";
+        cropOverlay.style.top = document.getElementById('cTop').value + "%";
+        cropOverlay.style.bottom = document.getElementById('cBot').value + "%";
+        cropOverlay.style.left = document.getElementById('cLeft').value + "%";
+        cropOverlay.style.right = document.getElementById('cRight').value + "%";
     }
-    ['cTop', 'cBot', 'cLeft', 'cRight'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateCropBox);
-    });
+    ['cTop', 'cBot', 'cLeft', 'cRight'].forEach(id => document.getElementById(id).addEventListener('input', updateCropBox));
 
-    // 4. Process and Upload
+    // 4. Process and Upload (Directly to Telegram)
     document.getElementById('processBtn').addEventListener('click', async () => {
         if(!videoBlobData) return alert("වීඩියෝ දත්ත හමුනොවුනි!");
         
+        if (BOT_TOKEN === "ඔබේ_BOT_TOKEN_එක_මෙතන_දාන්න") {
+            return alert("කරුණාකර කේතය තුළට ඔබගේ BOT TOKEN සහ CHAT ID ඇතුලත් කරන්න!");
+        }
+
         const btn = document.getElementById('processBtn');
         btn.disabled = true;
         
         const startT = parseFloat(startSlider.value);
-        const endT = parseFloat(endSlider.value);
-        const durationT = endT - startT;
+        const durationT = parseFloat(endSlider.value) - startT;
 
-        const natW = video.videoWidth;
-        const natH = video.videoHeight;
-        
+        const natW = video.videoWidth; const natH = video.videoHeight;
         const cropX = Math.floor((document.getElementById('cLeft').value / 100) * natW);
         const cropY = Math.floor((document.getElementById('cTop').value / 100) * natH);
         const cropW = Math.floor(natW - cropX - ((document.getElementById('cRight').value / 100) * natW));
@@ -195,19 +172,25 @@
 
         try {
             logMessage("⚙️ FFmpeg පද්ධතිය සූදානම් කරමින්...");
-            if (!ffmpeg.loaded) await ffmpeg.load();
+            
+            // 💡 WORKER ERROR FIX: Load modules via local Blob URLs instead of directly from unpkg
+            if (!ffmpeg.loaded) {
+                const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+                await ffmpeg.load({
+                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
+                });
+            }
 
             logMessage("✂️ වීඩියෝව Edit කරමින් පවතී (Trim & Crop)... මඳක් රැඳී සිටින්න.");
-            
-            // Write the pre-downloaded blob to FFmpeg virtual memory
             await ffmpeg.writeFile('input.mp4', await fetchFile(videoBlobData));
             
-            const filterStr = `crop=${cropW}:${cropH}:${cropX}:${cropY}`;
             await ffmpeg.exec([
                 '-ss', startT.toString(),
                 '-i', 'input.mp4',
                 '-t', durationT.toString(),
-                '-vf', filterStr,
+                '-vf', `crop=${cropW}:${cropH}:${cropX}:${cropY}`,
                 '-c:v', 'libx264',
                 '-preset', 'ultrafast',
                 '-c:a', 'copy',
@@ -216,15 +199,22 @@
 
             logMessage("📤 සාර්ථකයි! දැන් Telegram චැනලය වෙත Upload වෙමින් පවතී...");
             const fileData = await ffmpeg.readFile('output.mp4');
-            const videoBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
+            const outputBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
 
+            // 💡 Direct Telegram API Upload
             const formData = new FormData();
-            formData.append("video", videoBlob, "edited_video.mp4");
+            formData.append("chat_id", CHAT_ID);
+            formData.append("video", outputBlob, "edited_video.mp4");
+            
+            const tgUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendVideo`;
+            const uploadRes = await fetch(tgUrl, { method: "POST", body: formData });
+            const uploadData = await uploadRes.json();
 
-            const uploadRes = await fetch(WORKER_URL, { method: "POST", body: formData });
-
-            if (uploadRes.ok) logMessage("✅ සාර්ථකයි! වීඩියෝව Telegram චැනලයට යවන ලදි.");
-            else throw new Error("Cloudflare Worker එකෙන් Telegram වෙත යැවීමට නොහැකි විය.");
+            if (uploadData.ok) {
+                logMessage("✅ සාර්ථකයි! වීඩියෝව Telegram චැනලයට යවන ලදි.");
+            } else {
+                throw new Error("Telegram දෝෂයකි: " + uploadData.description);
+            }
 
         } catch (e) {
             console.error(e);
