@@ -1,303 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="si">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wala Tok</title>
-  <style>
-    :root {
-      --bg-dark: #030303;
-      --accent-neon: #00f2fe;
-      --primary-pink: #fe2c55;
-      --surface-card: #121212;
-      --text-main: #ffffff;
-      --text-muted: rgba(255, 255, 255, 0.6);
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body, html { height: 100%; background-color: var(--bg-dark); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; color: var(--text-main); }
-
-    .app-container { height: 100vh; width: 100vw; max-width: 480px; margin: 0 auto; position: relative; background: #000; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-
-    .brand-header { position: absolute; top: 0; left: 0; width: 100%; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); z-index: 20; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
-    .brand-logo { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(45deg, var(--primary-pink), var(--accent-neon)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .profile-trigger { background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s; }
-    .profile-trigger:hover { background: var(--primary-pink); border-color: var(--primary-pink); }
-
-    .feed-container { height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
-    .feed-container::-webkit-scrollbar { display: none; }
-
-    .video-card { height: 100vh; width: 100%; scroll-snap-align: start; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
-    video { width: 100%; height: 100%; object-fit: cover; }
-
-    .bottom-meta { position: absolute; bottom: 30px; left: 16px; right: 80px; z-index: 15; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
-    .user-handle { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; color: #fff; display: flex; align-items: center; gap: 5px; }
-    .user-handle::before { content: '⚡'; font-size: 0.9rem; }
-    .video-caption { font-size: 0.92rem; line-height: 1.4; color: rgba(255,255,255,0.9); margin-bottom: 12px; }
-
-    .sidebar-actions { position: absolute; right: 12px; bottom: 100px; z-index: 15; display: flex; flex-direction: column; align-items: center; gap: 22px; }
-    .action-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-    .action-btn { width: 48px; height: 48px; border-radius: 50%; background: rgba(30, 30, 30, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-    .action-item:hover .action-btn { transform: scale(1.1); }
-    .action-btn.liked { background: var(--primary-pink); color: white; border-color: var(--primary-pink); animation: pop 0.3s ease-in-out; }
-    .action-count { font-size: 0.75rem; font-weight: 600; margin-top: 5px; color: #fff; }
-
-    .comment-drawer { position: absolute; bottom: -100%; left: 0; width: 100%; height: 60%; background: var(--surface-card); border-top-left-radius: 16px; border-top-right-radius: 16px; z-index: 30; transition: bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1); padding: 20px; display: flex; flex-direction: column; }
-    .comment-drawer.open { bottom: 0; }
-    .drawer-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    .drawer-header h3 { font-size: 1rem; font-weight: 700; }
-    .close-drawer { font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
-    .comments-list { flex: 1; overflow-y: auto; padding: 15px 0; }
-    .comment-node { margin-bottom: 14px; font-size: 0.9rem; }
-    .comment-user { font-weight: 700; color: var(--accent-neon); margin-bottom: 2px;}
-    .comment-body { color: rgba(255,255,255,0.85); }
-
-    .comment-input-area { display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
-    .comment-input-area input { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 25px; color: white; outline: none; font-size: 0.9rem; }
-    .comment-input-area button { background: var(--primary-pink); color: white; border: none; padding: 0 18px; border-radius: 25px; font-weight: 600; cursor: pointer; }
-
-    .profile-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 40; display: flex; align-items: center; justify-content: center; padding: 20px; visibility: hidden; opacity: 0; transition: all 0.3s; }
-    .profile-modal.visible { visibility: visible; opacity: 1; }
-    .modal-card { background: var(--surface-card); border-radius: 16px; padding: 25px; width: 100%; border: 1px solid rgba(255,255,255,0.1); }
-    .modal-card h3 { margin-bottom: 10px; font-size: 1.2rem; }
-    .modal-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px; }
-    .modal-card input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; color: white; margin-bottom: 15px; outline: none; }
-    .modal-card button { width: 100%; background: linear-gradient(45deg, var(--primary-pink), var(--accent-neon)); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-
-    .loading-state { text-align: center; padding-top: 45vh; font-size: 1.1rem; color: var(--text-muted); letter-spacing: 1px; }
-
-    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Trimmer & Telegram Uploader</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f4f4f9; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { background-color: #0088cc; color: white; cursor: pointer; font-weight: bold; }
+        button:disabled { background-color: #aaa; }
+        #log { margin-top: 15px; font-size: 0.9em; color: #333; background: #eee; padding: 10px; border-radius: 4px; display: none; }
+    </style>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
 </head>
 <body>
 
-  <div class="app-container">
-    <header class="brand-header">
-      <div class="brand-logo">Wala Tok</div>
-      <div class="profile-trigger" id="profileBtn" onclick="toggleProfileModal(true)">Set Profile</div>
-    </header>
-
-    <div class="feed-container" id="feed">
-      <div class="loading-state" id="loader">LOADING DYNAMIC FEED...</div>
+<div class="container">
+    <h2>🔗 Video Processor</h2>
+    
+    <label>Social Media Video Link (Tiktok/IG/FB):</label>
+    <input type="text" id="videoUrl" placeholder="Paste link here...">
+    
+    <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+            <label>Start Time (සෙකන්ඩ්):</label>
+            <input type="number" id="startTime" value="0" min="0">
+        </div>
+        <div style="flex: 1;">
+            <label>End Time (සෙකන්ඩ්):</label>
+            <input type="number" id="endTime" value="10" min="1">
+        </div>
     </div>
 
-    <div class="comment-drawer" id="commentDrawer">
-      <div class="drawer-header">
-        <h3 id="commentHeaderTitle">Comments</h3>
-        <span class="close-drawer" onclick="toggleCommentDrawer(false)">&times;</span>
-      </div>
-      <div class="comments-list" id="commentsListContainer"></div>
-      <div class="comment-input-area">
-        <input type="text" id="newCommentInput" placeholder="Add a comment...">
-        <button onclick="submitComment()">Post</button>
-      </div>
-    </div>
+    <button id="processBtn">Trim & Upload to Telegram</button>
+    <div id="log"></div>
+</div>
 
-    <div class="profile-modal" id="profileModal">
-      <div class="modal-card">
-        <h3>Create Your Identity</h3>
-        <p>Set up your Wala Tok profile to comment and like content.</p>
-        <input type="text" id="usernameInput" placeholder="Enter username (e.g. jhon_tok)">
-        <button id="saveProfileBtn" onclick="saveProfileIdentity()">Save Profile Handle</button>
-      </div>
-    </div>
-  </div>
+<script>
+    const { FFmpeg } = FFmpegWASM;
+    const { fetchFile } = FFmpegUtil;
+    const ffmpeg = new FFmpeg();
+    
+    const WORKER_URL = "ඔබේ_CLOUDFLARE_WORKER_URL_එක_මෙතන_දාන්න"; // උදා: https://bot.yourname.workers.dev
 
-  <script>
-    /**
-     * CONFIGURATIONS - ඔයාගේ විස්තර මෙතනට දාන්න
-     */
-    const TELEGRAM_BOT_TOKEN = "8974378669:AAE3fxJa-OdGUi9HXiKkPu9b7SC8QeUXp4Q"; 
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxu16UiRg0OkEtHji3htdtctrIqM6K1dICEQaD2pTjoEavxJ9eWil6kfxTC5ekfsX8D/exec";
-
-    let currentActiveVideoId = null;
-
-    let userHandle = localStorage.getItem('walatok_username') || "anonymous_user";
-    document.getElementById('profileBtn').innerText = "@" + userHandle;
-
-    function toggleProfileModal(show) {
-      const modal = document.getElementById('profileModal');
-      show ? modal.classList.add('visible') : modal.classList.remove('visible');
+    function logMessage(msg) {
+        const logDiv = document.getElementById('log');
+        logDiv.style.display = 'block';
+        logDiv.innerHTML += `> ${msg}<br>`;
     }
 
-    async function saveProfileIdentity() {
-      const inputVal = document.getElementById('usernameInput').value.trim();
-      const btn = document.getElementById('saveProfileBtn');
-      if(inputVal) {
-        userHandle = inputVal.replace(/[^a-zA-Z0-9_]/g, ""); 
-        btn.innerText = "Registering...";
-        btn.disabled = true;
+    async function processAndUpload() {
+        const btn = document.getElementById('processBtn');
+        const url = document.getElementById('videoUrl').value;
+        const start = document.getElementById('startTime').value;
+        const end = document.getElementById('endTime').value;
+        const duration = end - start;
+
+        if (!url) return alert("කරුණාකර ලින්ක් එකක් ඇතුළත් කරන්න!");
 
         try {
-            await fetch(`${APPS_SCRIPT_URL}?action=registerUser&username=${encodeURIComponent(userHandle)}`);
-            localStorage.setItem('walatok_username', userHandle);
-            document.getElementById('profileBtn').innerText = "@" + userHandle;
-            toggleProfileModal(false);
-        } catch(e) {
-            console.error("Failed to sync profile");
+            btn.disabled = true;
+            document.getElementById('log').innerHTML = '';
+            
+            // 1. Get Direct Video Link via Cobalt API
+            logMessage("වීඩියෝව සෙවීම ආරම්භ කළා...");
+            const apiRes = await fetch("https://api.cobalt.tools/api/json", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({ url: url, videoQuality: "720" })
+            });
+            const apiData = await apiRes.json();
+            if (apiData.status === "error" || !apiData.url) throw new Error("වීඩියෝව බාගත කිරීමට නොහැකි විය.");
+            const directVideoUrl = apiData.url;
+
+            // 2. Load FFmpeg
+            logMessage("FFmpeg පද්ධතිය සූදානම් කරමින්...");
+            if (!ffmpeg.loaded) await ffmpeg.load();
+
+            // 3. Download & Trim Video in Browser
+            logMessage(`වීඩියෝව Trim කරමින්... (තත්පර ${start} සිට ${end} දක්වා)`);
+            await ffmpeg.writeFile('input.mp4', await fetchFile(directVideoUrl));
+            await ffmpeg.exec(['-i', 'input.mp4', '-ss', start.toString(), '-t', duration.toString(), '-c', 'copy', 'output.mp4']);
+            const fileData = await ffmpeg.readFile('output.mp4');
+            const videoBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
+
+            // 4. Send to Cloudflare Worker
+            logMessage("Telegram වෙත යවමින්...");
+            const formData = new FormData();
+            formData.append("video", videoBlob, "video.mp4");
+
+            const uploadRes = await fetch(WORKER_URL, {
+                method: "POST",
+                body: formData
+            });
+
+            if (uploadRes.ok) {
+                logMessage("✅ සාර්ථකව Telegram වෙත යවන ලදි!");
+            } else {
+                throw new Error("Worker එක හරහා යැවීම අසාර්ථකයි.");
+            }
+
+        } catch (error) {
+            console.error(error);
+            logMessage("❌ දෝෂයක්: " + error.message);
         } finally {
-            btn.innerText = "Save Profile Handle";
             btn.disabled = false;
         }
-      }
     }
 
-    // Cloudflare නැතුව Telegram එකෙන් direct link එක HTML එකටම ගන්නවා (Limit පනින්නේ නෑ)
-    async function fetchDirectTelegramStreamUrl(fileId) {
-      try {
-        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
-        const data = await response.json();
-        if (data.ok && data.result.file_path) {
-          return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${data.result.file_path}`;
-        }
-      } catch (error) {
-        console.error("Fetch failed", error);
-      }
-      return null;
-    }
+    document.getElementById('processBtn').addEventListener('click', processAndUpload);
+</script>
 
-    async function initializeWalaTokFeed() {
-      try {
-        const response = await fetch(`${APPS_SCRIPT_URL}?action=getVideos`);
-        const videos = await response.json();
-        const feedContainer = document.getElementById('feed');
-        document.getElementById('loader').style.display = 'none';
-
-        if(videos.length === 0) {
-          feedContainer.innerHTML = '<div class="loading-state">Feed is empty. Check admin panel!</div>';
-          return;
-        }
-
-        for (let item of videos.reverse()) {
-          const card = document.createElement('div');
-          card.className = 'video-card';
-          card.setAttribute('data-id', item['Video ID']);
-
-          card.innerHTML = `
-            <div class="loading-state" style="position:absolute; z-index:1; padding-top:0;">Resolving Media...</div>
-            <video loop playsinline onclick="toggleVideoPlayback(this)"></video>
-            
-            <div class="bottom-meta">
-              <div class="user-handle">wala_creator</div>
-              <div class="video-caption">${item['Title']}</div>
-            </div>
-
-            <div class="sidebar-actions">
-              <div class="action-item" onclick="registerLike('${item['Video ID']}', this)">
-                <div class="action-btn">❤️</div>
-                <div class="action-count">${item['Likes'] || 0}</div>
-              </div>
-              <div class="action-item" onclick="openCommentDrawer('${item['Video ID']}')">
-                <div class="action-btn">💬</div>
-                <div class="action-count">💬</div>
-              </div>
-            </div>
-          `;
-
-          feedContainer.appendChild(card);
-
-          fetchDirectTelegramStreamUrl(item['Video ID']).then(directStreamUrl => {
-            if(directStreamUrl) {
-              const videoEl = card.querySelector('video');
-              const placeholder = card.querySelector('.loading-state');
-              videoEl.src = directStreamUrl;
-              if(placeholder) placeholder.style.display = 'none';
-            }
-          });
-        }
-
-        const observerOptions = { threshold: 0.6 };
-        const videoObserver = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            const video = entry.target.querySelector('video');
-            if(video) {
-              if (entry.isIntersecting) {
-                video.play().catch(() => {});
-              } else {
-                video.pause();
-                video.currentTime = 0;
-              }
-            }
-          });
-        }, observerOptions);
-
-        document.querySelectorAll('.video-card').forEach(card => videoObserver.observe(card));
-
-      } catch (err) {
-        console.error("Initialization failed:", err);
-        document.getElementById('loader').innerText = "Network error.";
-      }
-    }
-
-    function toggleVideoPlayback(videoElement) {
-      videoElement.paused ? videoElement.play() : videoElement.pause();
-    }
-
-    async function registerLike(videoId, element) {
-      const btn = element.querySelector('.action-btn');
-      const counter = element.querySelector('.action-count');
-      if(btn.classList.contains('liked')) return; 
-
-      btn.classList.add('liked');
-      try {
-        const res = await fetch(`${APPS_SCRIPT_URL}?action=likeVideo&id=${encodeURIComponent(videoId)}`);
-        const result = await res.json();
-        if(result.success) { counter.innerText = result.likes; }
-      } catch(e) { console.error("Vote failed"); }
-    }
-
-    async function openCommentDrawer(videoId) {
-      currentActiveVideoId = videoId;
-      toggleCommentDrawer(true);
-      const listContainer = document.getElementById('commentsListContainer');
-      listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem;">Loading...</div>';
-
-      try {
-        const res = await fetch(`${APPS_SCRIPT_URL}?action=getComments&id=${encodeURIComponent(videoId)}`);
-        const comments = await res.json();
-        listContainer.innerHTML = '';
-        
-        if(comments.length === 0) {
-          listContainer.innerHTML = '<div style="color:var(--text-muted); font-size:0.85rem; text-align:center; padding:20px;">Be the first to comment!</div>';
-          return;
-        }
-
-        comments.forEach(c => {
-          const div = document.createElement('div');
-          div.className = 'comment-node';
-          div.innerHTML = `<div class="comment-user">@${c.username}</div><div class="comment-body">${c.comment}</div>`;
-          listContainer.appendChild(div);
-        });
-      } catch(e) {
-        listContainer.innerHTML = '<div style="color:red; font-size:0.85rem;">Error loading comments.</div>';
-      }
-    }
-
-    function toggleCommentDrawer(open) {
-      const drawer = document.getElementById('commentDrawer');
-      open ? drawer.classList.add('open') : drawer.classList.remove('open');
-    }
-
-    async function submitComment() {
-      const input = document.getElementById('newCommentInput');
-      const text = input.value.trim();
-      if(!text || !currentActiveVideoId) return;
-
-      input.value = '';
-      const listContainer = document.getElementById('commentsListContainer');
-      
-      const div = document.createElement('div');
-      div.className = 'comment-node';
-      div.innerHTML = `<div class="comment-user">@${userHandle}</div><div class="comment-body">${text}</div>`;
-      listContainer.appendChild(div);
-      listContainer.scrollTop = listContainer.scrollHeight;
-
-      try {
-        await fetch(`${APPS_SCRIPT_URL}?action=addComment&id=${encodeURIComponent(currentActiveVideoId)}&username=${encodeURIComponent(userHandle)}&comment=${encodeURIComponent(text)}`);
-      } catch (e) { console.error("Comment failed"); }
-    }
-
-    window.addEventListener('DOMContentLoaded', initializeWalaTokFeed);
-  </script>
 </body>
 </html>
