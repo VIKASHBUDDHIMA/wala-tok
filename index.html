@@ -33,7 +33,7 @@
         .crop-control label { font-size: 12px; color: #aaa; }
         .crop-control input { width: 100%; }
 
-        #log { margin-top: 15px; font-size: 13px; color: #00d2ff; text-align: center; }
+        #log { margin-top: 15px; font-size: 13px; color: #00d2ff; text-align: center; white-space: pre-line; }
     </style>
 </head>
 <body>
@@ -69,7 +69,8 @@
 </div>
 
 <script>
-    const WORKER_URL = "https://videofootele.rathuuweb.workers.dev"; 
+    // ⚠️ මතක ඇතුව ඔබේ Worker ලින්ක් එක මෙතනට දාන්න
+    const WORKER_URL = "https://wala-tok.vikashbuddhima.workers.dev"; 
 
     const { FFmpeg } = FFmpegWASM;
     const { fetchFile } = FFmpegUtil;
@@ -81,29 +82,38 @@
     const trimFill = document.getElementById('trimFill');
     const cropOverlay = document.getElementById('cropOverlay');
     
-    let directVideoUrl = "";
+    let videoBlobData = null; // To store downladed video data
     let videoDuration = 0;
 
     function logMessage(msg) { document.getElementById('log').innerHTML = msg; }
 
-    // 1. Load Video from TikTok
+    // 1. Load Video from TikTok using Blob proxy to bypass COEP/CORS
     document.getElementById('loadBtn').addEventListener('click', async () => {
         const url = document.getElementById('videoUrl').value;
         if (!url) return alert("ලින්ක් එකක් දෙන්න!");
         
         const loadBtn = document.getElementById('loadBtn');
         loadBtn.disabled = true;
-        logMessage("⏳ වීඩියෝව ගෙන්වා ගනිමින් පවතී...");
+        logMessage("⏳ TikTok API එකෙන් වීඩියෝව සොයමින් පවතී...");
 
         try {
-            // Using TikWM API for TikTok (No CORS issues)
+            // Get Direct MP4 URL via TikWM
             const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
             const data = await res.json();
             
-            if(data.code !== 0 || !data.data.play) throw new Error("වීඩියෝව සොයාගත නොහැක.");
-            directVideoUrl = data.data.play;
+            if(data.code !== 0 || !data.data.play) throw new Error("TikTok වීඩියෝව සොයාගත නොහැක.");
+            const directVideoUrl = data.data.play;
 
-            video.src = directVideoUrl;
+            logMessage("⏳ ආරක්ෂිතව වීඩියෝ දත්ත බ්‍රවුසරයට බාගත කරමින් පවතී...\n(මෙයට තත්පර කිහිපයක් ගතවේ)");
+
+            // Fetch video as BLOB to bypass COEP / NotSameOrigin policy
+            const videoFetch = await fetch(directVideoUrl);
+            videoBlobData = await videoFetch.blob();
+            
+            // Create Local Object URL
+            const localVideoUrl = URL.createObjectURL(videoBlobData);
+
+            video.src = localVideoUrl;
             document.getElementById('videoWrapper').style.display = 'block';
             
             video.onloadedmetadata = () => {
@@ -117,10 +127,10 @@
                 document.getElementById('cropControls').style.display = 'grid';
                 document.getElementById('processBtn').style.display = 'block';
                 updateSliders();
-                logMessage("✅ වීඩියෝව සූදානම්. අවශ්‍ය සකස්කිරීම් කරන්න.");
+                logMessage("✅ වීඩියෝව සාර්ථකව සූදානම් කළා! දැන් Trim සහ Crop කරන්න.");
             };
         } catch (e) {
-            logMessage("❌ දෝෂයක්: " + e.message);
+            logMessage("❌ දෝෂයක්: " + e.message + "\nකරුණාකර නැවත උත්සාහ කරන්න.");
         } finally {
             loadBtn.disabled = false;
         }
@@ -166,6 +176,8 @@
 
     // 4. Process and Upload
     document.getElementById('processBtn').addEventListener('click', async () => {
+        if(!videoBlobData) return alert("වීඩියෝ දත්ත හමුනොවුනි!");
+        
         const btn = document.getElementById('processBtn');
         btn.disabled = true;
         
@@ -176,21 +188,20 @@
         const natW = video.videoWidth;
         const natH = video.videoHeight;
         
-        // Calculate crop pixels
         const cropX = Math.floor((document.getElementById('cLeft').value / 100) * natW);
         const cropY = Math.floor((document.getElementById('cTop').value / 100) * natH);
         const cropW = Math.floor(natW - cropX - ((document.getElementById('cRight').value / 100) * natW));
         const cropH = Math.floor(natH - cropY - ((document.getElementById('cBot').value / 100) * natH));
 
         try {
-            logMessage("⚙️ පද්ධතිය (FFmpeg) සූදානම් කරමින්...");
+            logMessage("⚙️ FFmpeg පද්ධතිය සූදානම් කරමින්...");
             if (!ffmpeg.loaded) await ffmpeg.load();
 
-            logMessage("✂️ වීඩියෝව කපමින් (Trim & Crop) පවතී... කරුණාකර රැඳීසිටින්න.");
+            logMessage("✂️ වීඩියෝව Edit කරමින් පවතී (Trim & Crop)... මඳක් රැඳී සිටින්න.");
             
-            await ffmpeg.writeFile('input.mp4', await fetchFile(directVideoUrl));
+            // Write the pre-downloaded blob to FFmpeg virtual memory
+            await ffmpeg.writeFile('input.mp4', await fetchFile(videoBlobData));
             
-            // Build FFmpeg command with crop filter
             const filterStr = `crop=${cropW}:${cropH}:${cropX}:${cropY}`;
             await ffmpeg.exec([
                 '-ss', startT.toString(),
@@ -203,7 +214,7 @@
                 'output.mp4'
             ]);
 
-            logMessage("📤 Telegram වෙත යවමින්...");
+            logMessage("📤 සාර්ථකයි! දැන් Telegram චැනලය වෙත Upload වෙමින් පවතී...");
             const fileData = await ffmpeg.readFile('output.mp4');
             const videoBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
 
@@ -212,8 +223,8 @@
 
             const uploadRes = await fetch(WORKER_URL, { method: "POST", body: formData });
 
-            if (uploadRes.ok) logMessage("✅ සාර්ථකව Telegram වෙත යවන ලදි!");
-            else throw new Error("Worker එක හරහා යැවීම අසාර්ථකයි.");
+            if (uploadRes.ok) logMessage("✅ සාර්ථකයි! වීඩියෝව Telegram චැනලයට යවන ලදි.");
+            else throw new Error("Cloudflare Worker එකෙන් Telegram වෙත යැවීමට නොහැකි විය.");
 
         } catch (e) {
             console.error(e);
