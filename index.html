@@ -4,8 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Video Trimmer & Cropper</title>
+    
+    <script>
+        const OldWorker = window.Worker;
+        window.Worker = function (sub, opt) {
+            let url = sub.toString();
+            if (url.startsWith('http') && !url.includes(window.location.origin)) {
+                const blob = new Blob([`importScripts("${url}");`], { type: 'application/javascript' });
+                return new OldWorker(URL.createObjectURL(blob), opt);
+            }
+            return new OldWorker(sub, opt);
+        };
+        window.Worker.prototype = OldWorker.prototype;
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
@@ -66,8 +81,8 @@
 
 <script>
     // ⚠️ ඔබේ Telegram Bot Token සහ Channel ID මෙතැනට දාන්න
-    const BOT_TOKEN = "8974378669:AAE3fxJa-OdGUi9HXiKkPu9b7SC8QeUXp4Q"; // උදා: 7123456789:AAGh...
-    const CHAT_ID = "-1003754232314";     // උදා: @mychannel හෝ -100123456789
+    const BOT_TOKEN = "8974378669:AAE3fxJa-OdGUi9HXiKkPu9b7SC8QeUXp4Q"; 
+    const CHAT_ID = "-1003754232314";     
 
     const { FFmpeg } = FFmpegWASM;
     const { fetchFile, toBlobURL } = FFmpegUtil;
@@ -169,7 +184,6 @@
         try {
             logMessage("⚙️ FFmpeg පද්ධතිය සූදානම් කරමින්...");
             
-            // 💡 CORS ERROR FIX: unpkg වෙනුවට jsdelivr භාවිතා කිරීම
             if (!ffmpeg.loaded) {
                 const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
                 await ffmpeg.load({
