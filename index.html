@@ -3,115 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Trimmer & Telegram Uploader</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f4f4f9; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background-color: #0088cc; color: white; cursor: pointer; font-weight: bold; }
-        button:disabled { background-color: #aaa; }
-        #log { margin-top: 15px; font-size: 0.9em; color: #333; background: #eee; padding: 10px; border-radius: 4px; display: none; }
-    </style>
+    <title>Pro Video Trimmer & Cropper</title>
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
     <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #00d2ff; margin-top: 0; }
+        input[type="text"] { width: 100%; padding: 12px; border-radius: 6px; border: none; background: #2a2a2a; color: #fff; margin-bottom: 10px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; background: #00d2ff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        button:hover { background: #00a8cc; }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; }
+        
+        /* Video Preview Area */
+        .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; display: none; }
+        video { width: 100%; display: block; }
+        
+        /* Crop Overlay Box */
+        .crop-overlay { position: absolute; top: 0; bottom: 0; left: 0; right: 0; border: 2px dashed #00d2ff; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); transition: 0.1s; }
+
+        /* CapCut Style Dual Slider */
+        .range-container { position: relative; height: 40px; margin: 20px 0; display: none; }
+        .range-track { position: absolute; width: 100%; height: 8px; background: #333; top: 50%; transform: translateY(-50%); border-radius: 4px; }
+        .range-fill { position: absolute; height: 8px; background: #00d2ff; top: 50%; transform: translateY(-50%); border-radius: 4px; }
+        input[type="range"].dual { position: absolute; width: 100%; top: 50%; transform: translateY(-50%); appearance: none; background: transparent; pointer-events: none; margin: 0; }
+        input[type="range"].dual::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; background: #fff; border: 2px solid #00d2ff; border-radius: 50%; pointer-events: auto; cursor: ew-resize; }
+        
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; display: none; margin-bottom: 15px; }
+        .crop-control label { font-size: 12px; color: #aaa; }
+        .crop-control input { width: 100%; }
+
+        #log { margin-top: 15px; font-size: 13px; color: #00d2ff; text-align: center; }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🔗 Video Processor</h2>
+    <h2>🎬 PRO EDITOR</h2>
     
-    <label>Social Media Video Link (Tiktok/IG/FB):</label>
-    <input type="text" id="videoUrl" placeholder="Paste link here...">
-    
-    <div style="display: flex; gap: 10px;">
-        <div style="flex: 1;">
-            <label>Start Time (සෙකන්ඩ්):</label>
-            <input type="number" id="startTime" value="0" min="0">
-        </div>
-        <div style="flex: 1;">
-            <label>End Time (සෙකන්ඩ්):</label>
-            <input type="number" id="endTime" value="10" min="1">
-        </div>
+    <input type="text" id="videoUrl" placeholder="TikTok ලින්ක් එක මෙතන දාන්න...">
+    <button id="loadBtn">Load Video</button>
+
+    <div class="video-wrapper" id="videoWrapper">
+        <video id="previewVideo" controls playsinline></video>
+        <div class="crop-overlay" id="cropOverlay"></div>
     </div>
 
-    <button id="processBtn">Trim & Upload to Telegram</button>
+    <div class="range-container" id="trimControls">
+        <div class="range-track"></div>
+        <div class="range-fill" id="trimFill"></div>
+        <input type="range" class="dual" id="startTrim" min="0" max="100" value="0" step="0.1">
+        <input type="range" class="dual" id="endTrim" min="0" max="100" value="100" step="0.1">
+    </div>
+    <div id="timeDisplay" style="text-align: center; font-size: 12px; margin-bottom: 15px; display: none;">Trim: 0.0s - 0.0s</div>
+
+    <div class="controls-grid" id="cropControls">
+        <div class="crop-control"><label>Crop Top (%)</label><input type="range" id="cTop" min="0" max="40" value="0"></div>
+        <div class="crop-control"><label>Crop Bottom (%)</label><input type="range" id="cBot" min="0" max="40" value="0"></div>
+        <div class="crop-control"><label>Crop Left (%)</label><input type="range" id="cLeft" min="0" max="40" value="0"></div>
+        <div class="crop-control"><label>Crop Right (%)</label><input type="range" id="cRight" min="0" max="40" value="0"></div>
+    </div>
+
+    <button id="processBtn" style="display: none; background: #ff0055; color: white;">Trim, Crop & Upload to Telegram</button>
     <div id="log"></div>
 </div>
 
 <script>
+    const WORKER_URL = "https://videofootele.rathuuweb.workers.dev"; 
+
     const { FFmpeg } = FFmpegWASM;
     const { fetchFile } = FFmpegUtil;
     const ffmpeg = new FFmpeg();
+
+    const video = document.getElementById('previewVideo');
+    const startSlider = document.getElementById('startTrim');
+    const endSlider = document.getElementById('endTrim');
+    const trimFill = document.getElementById('trimFill');
+    const cropOverlay = document.getElementById('cropOverlay');
     
-    const WORKER_URL = "https://videofootele.rathuuweb.workers.dev"; // උදා: https://bot.yourname.workers.dev
+    let directVideoUrl = "";
+    let videoDuration = 0;
 
-    function logMessage(msg) {
-        const logDiv = document.getElementById('log');
-        logDiv.style.display = 'block';
-        logDiv.innerHTML += `> ${msg}<br>`;
-    }
+    function logMessage(msg) { document.getElementById('log').innerHTML = msg; }
 
-    async function processAndUpload() {
-        const btn = document.getElementById('processBtn');
+    // 1. Load Video from TikTok
+    document.getElementById('loadBtn').addEventListener('click', async () => {
         const url = document.getElementById('videoUrl').value;
-        const start = document.getElementById('startTime').value;
-        const end = document.getElementById('endTime').value;
-        const duration = end - start;
-
-        if (!url) return alert("කරුණාකර ලින්ක් එකක් ඇතුළත් කරන්න!");
+        if (!url) return alert("ලින්ක් එකක් දෙන්න!");
+        
+        const loadBtn = document.getElementById('loadBtn');
+        loadBtn.disabled = true;
+        logMessage("⏳ වීඩියෝව ගෙන්වා ගනිමින් පවතී...");
 
         try {
-            btn.disabled = true;
-            document.getElementById('log').innerHTML = '';
+            // Using TikWM API for TikTok (No CORS issues)
+            const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
+            const data = await res.json();
             
-            // 1. Get Direct Video Link via Cobalt API
-            logMessage("වීඩියෝව සෙවීම ආරම්භ කළා...");
-            const apiRes = await fetch("https://api.cobalt.tools/api/json", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
-                body: JSON.stringify({ url: url, videoQuality: "720" })
-            });
-            const apiData = await apiRes.json();
-            if (apiData.status === "error" || !apiData.url) throw new Error("වීඩියෝව බාගත කිරීමට නොහැකි විය.");
-            const directVideoUrl = apiData.url;
+            if(data.code !== 0 || !data.data.play) throw new Error("වීඩියෝව සොයාගත නොහැක.");
+            directVideoUrl = data.data.play;
 
-            // 2. Load FFmpeg
-            logMessage("FFmpeg පද්ධතිය සූදානම් කරමින්...");
+            video.src = directVideoUrl;
+            document.getElementById('videoWrapper').style.display = 'block';
+            
+            video.onloadedmetadata = () => {
+                videoDuration = video.duration;
+                startSlider.max = videoDuration;
+                endSlider.max = videoDuration;
+                endSlider.value = videoDuration;
+                
+                document.getElementById('trimControls').style.display = 'block';
+                document.getElementById('timeDisplay').style.display = 'block';
+                document.getElementById('cropControls').style.display = 'grid';
+                document.getElementById('processBtn').style.display = 'block';
+                updateSliders();
+                logMessage("✅ වීඩියෝව සූදානම්. අවශ්‍ය සකස්කිරීම් කරන්න.");
+            };
+        } catch (e) {
+            logMessage("❌ දෝෂයක්: " + e.message);
+        } finally {
+            loadBtn.disabled = false;
+        }
+    });
+
+    // 2. Dual Slider Logic (Trim)
+    function updateSliders() {
+        let startVal = parseFloat(startSlider.value);
+        let endVal = parseFloat(endSlider.value);
+        
+        if (startVal >= endVal) {
+            startSlider.value = endVal - 0.5;
+            startVal = endVal - 0.5;
+        }
+        
+        const startPercent = (startVal / videoDuration) * 100;
+        const endPercent = (endVal / videoDuration) * 100;
+        
+        trimFill.style.left = startPercent + "%";
+        trimFill.style.width = (endPercent - startPercent) + "%";
+        document.getElementById('timeDisplay').innerText = `Trim: ${startVal.toFixed(1)}s - ${endVal.toFixed(1)}s`;
+        
+        video.currentTime = startVal;
+    }
+    startSlider.addEventListener('input', updateSliders);
+    endSlider.addEventListener('input', updateSliders);
+
+    // 3. Crop Visual Overlay Logic
+    function updateCropBox() {
+        const t = document.getElementById('cTop').value;
+        const b = document.getElementById('cBot').value;
+        const l = document.getElementById('cLeft').value;
+        const r = document.getElementById('cRight').value;
+        
+        cropOverlay.style.top = t + "%";
+        cropOverlay.style.bottom = b + "%";
+        cropOverlay.style.left = l + "%";
+        cropOverlay.style.right = r + "%";
+    }
+    ['cTop', 'cBot', 'cLeft', 'cRight'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateCropBox);
+    });
+
+    // 4. Process and Upload
+    document.getElementById('processBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('processBtn');
+        btn.disabled = true;
+        
+        const startT = parseFloat(startSlider.value);
+        const endT = parseFloat(endSlider.value);
+        const durationT = endT - startT;
+
+        const natW = video.videoWidth;
+        const natH = video.videoHeight;
+        
+        // Calculate crop pixels
+        const cropX = Math.floor((document.getElementById('cLeft').value / 100) * natW);
+        const cropY = Math.floor((document.getElementById('cTop').value / 100) * natH);
+        const cropW = Math.floor(natW - cropX - ((document.getElementById('cRight').value / 100) * natW));
+        const cropH = Math.floor(natH - cropY - ((document.getElementById('cBot').value / 100) * natH));
+
+        try {
+            logMessage("⚙️ පද්ධතිය (FFmpeg) සූදානම් කරමින්...");
             if (!ffmpeg.loaded) await ffmpeg.load();
 
-            // 3. Download & Trim Video in Browser
-            logMessage(`වීඩියෝව Trim කරමින්... (තත්පර ${start} සිට ${end} දක්වා)`);
+            logMessage("✂️ වීඩියෝව කපමින් (Trim & Crop) පවතී... කරුණාකර රැඳීසිටින්න.");
+            
             await ffmpeg.writeFile('input.mp4', await fetchFile(directVideoUrl));
-            await ffmpeg.exec(['-i', 'input.mp4', '-ss', start.toString(), '-t', duration.toString(), '-c', 'copy', 'output.mp4']);
+            
+            // Build FFmpeg command with crop filter
+            const filterStr = `crop=${cropW}:${cropH}:${cropX}:${cropY}`;
+            await ffmpeg.exec([
+                '-ss', startT.toString(),
+                '-i', 'input.mp4',
+                '-t', durationT.toString(),
+                '-vf', filterStr,
+                '-c:v', 'libx264',
+                '-preset', 'ultrafast',
+                '-c:a', 'copy',
+                'output.mp4'
+            ]);
+
+            logMessage("📤 Telegram වෙත යවමින්...");
             const fileData = await ffmpeg.readFile('output.mp4');
             const videoBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
 
-            // 4. Send to Cloudflare Worker
-            logMessage("Telegram වෙත යවමින්...");
             const formData = new FormData();
-            formData.append("video", videoBlob, "video.mp4");
+            formData.append("video", videoBlob, "edited_video.mp4");
 
-            const uploadRes = await fetch(WORKER_URL, {
-                method: "POST",
-                body: formData
-            });
+            const uploadRes = await fetch(WORKER_URL, { method: "POST", body: formData });
 
-            if (uploadRes.ok) {
-                logMessage("✅ සාර්ථකව Telegram වෙත යවන ලදි!");
-            } else {
-                throw new Error("Worker එක හරහා යැවීම අසාර්ථකයි.");
-            }
+            if (uploadRes.ok) logMessage("✅ සාර්ථකව Telegram වෙත යවන ලදි!");
+            else throw new Error("Worker එක හරහා යැවීම අසාර්ථකයි.");
 
-        } catch (error) {
-            console.error(error);
-            logMessage("❌ දෝෂයක්: " + error.message);
+        } catch (e) {
+            console.error(e);
+            logMessage("❌ දෝෂයක්: " + e.message);
         } finally {
             btn.disabled = false;
         }
-    }
-
-    document.getElementById('processBtn').addEventListener('click', processAndUpload);
+    });
 </script>
-
 </body>
 </html>
