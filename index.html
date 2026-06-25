@@ -1,86 +1,188 @@
 <!DOCTYPE html>
-<html lang="si">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Video Trimmer & Cropper</title>
+    <title>Pro Video Studio | Modern Trimmer & Cropper</title>
     
-    <script>
-        const OldWorker = window.Worker;
-        window.Worker = function (sub, opt) {
-            let url = sub.toString();
-            if (url.startsWith('http') && !url.includes(window.location.origin)) {
-                const blob = new Blob([`importScripts("${url}");`], { type: 'application/javascript' });
-                return new OldWorker(URL.createObjectURL(blob), opt);
-            }
-            return new OldWorker(sub, opt);
-        };
-        window.Worker.prototype = OldWorker.prototype;
-    </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
     
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: #1e1e1e; padding: 25px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
-        h2 { text-align: center; color: #00d2ff; margin-top: 0; }
-        input[type="text"] { width: 100%; padding: 12px; border-radius: 6px; border: none; background: #2a2a2a; color: #fff; margin-bottom: 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 6px; background: #00d2ff; color: #000; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        button:hover { background: #00a8cc; }
-        button:disabled { background: #555; color: #888; cursor: not-allowed; }
+        :root {
+            --bg: #09090b;
+            --surface: #18181b;
+            --primary: #00f0ff;
+            --accent: #ff0055;
+            --text: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
         
-        .video-wrapper { position: relative; width: 100%; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 15px; display: none; }
+        body { 
+            background-color: var(--bg); color: var(--text); 
+            margin: 0; padding: 30px 15px; 
+            display: flex; justify-content: center; min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.1), transparent 50%);
+        }
+
+        .studio-container {
+            background: var(--surface);
+            padding: 30px; border-radius: 20px;
+            width: 100%; max-width: 550px;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 40px rgba(0, 240, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h2 { margin: 0; font-size: 1.8rem; font-weight: 700; background: linear-gradient(to right, var(--primary), #fff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { margin: 5px 0 0; font-size: 0.9rem; color: var(--text-muted); }
+
+        /* Setup Section */
+        #setupSection { transition: 0.3s; }
+        
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.2rem; }
+        input[type="text"] {
+            width: 100%; padding: 15px 15px 15px 45px;
+            background: var(--glass); border: 1px solid var(--border);
+            border-radius: 12px; color: var(--text); font-size: 1rem; transition: 0.3s;
+        }
+        input[type="text"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 15px rgba(0,240,255,0.2); }
+
+        .btn {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: #000; box-shadow: 0 4px 15px rgba(0,240,255,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,240,255,0.4); }
+        .btn-accent { background: linear-gradient(45deg, var(--accent), #ff4a8b); color: #fff; box-shadow: 0 4px 15px rgba(255,0,85,0.3); margin-top: 15px; }
+        .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255,0,85,0.5); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        /* Editor Main Area */
+        #mainEditor { display: none; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* Player & Visual Cropper */
+        .player-wrapper {
+            position: relative; width: 100%; border-radius: 12px;
+            overflow: hidden; background: #000; margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--border);
+        }
         video { width: 100%; display: block; }
-        .crop-overlay { position: absolute; top: 0; bottom: 0; left: 0; right: 0; border: 2px dashed #00d2ff; pointer-events: none; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); transition: 0.1s; }
-
-        .range-container { position: relative; height: 40px; margin: 20px 0; display: none; }
-        .range-track { position: absolute; width: 100%; height: 8px; background: #333; top: 50%; transform: translateY(-50%); border-radius: 4px; }
-        .range-fill { position: absolute; height: 8px; background: #00d2ff; top: 50%; transform: translateY(-50%); border-radius: 4px; }
-        input[type="range"].dual { position: absolute; width: 100%; top: 50%; transform: translateY(-50%); appearance: none; background: transparent; pointer-events: none; margin: 0; }
-        input[type="range"].dual::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; background: #fff; border: 2px solid #00d2ff; border-radius: 50%; pointer-events: auto; cursor: ew-resize; }
         
-        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; display: none; margin-bottom: 15px; }
-        .crop-control label { font-size: 12px; color: #aaa; }
-        .crop-control input { width: 100%; }
+        .crop-container { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+        
+        .crop-box {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border: 2px solid var(--primary); pointer-events: auto;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
+            cursor: move;
+        }
+        .crop-box::after { content: ''; position: absolute; inset: 0; border: 1px dashed rgba(255,255,255,0.4); pointer-events: none; }
+        
+        .handle { position: absolute; width: 20px; height: 20px; background: #fff; border: 3px solid var(--primary); border-radius: 50%; z-index: 20; }
+        .handle-tl { top: -10px; left: -10px; cursor: nwse-resize; }
+        .handle-tr { top: -10px; right: -10px; cursor: nesw-resize; }
+        .handle-bl { bottom: -10px; left: -10px; cursor: nesw-resize; }
+        .handle-br { bottom: -10px; right: -10px; cursor: nwse-resize; }
 
-        #log { margin-top: 15px; font-size: 13px; color: #00d2ff; text-align: center; white-space: pre-line; }
+        .player-tools { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); padding: 10px 15px; position: absolute; bottom: 0; width: 100%; z-index: 30; }
+        .tool-btn { background: transparent; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+        .tool-btn:hover { color: var(--primary); }
+
+        /* Timeline */
+        .timeline-wrapper { position: relative; width: 100%; height: 60px; background: var(--glass); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+        .thumb-track { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; opacity: 0.6; }
+        .thumb-track img { flex: 1; height: 100%; object-fit: cover; border-right: 1px solid rgba(0,0,0,0.5); }
+        
+        .dual-slider { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .trim-fill { position: absolute; height: 100%; background: rgba(0, 240, 255, 0.2); border-left: 3px solid var(--primary); border-right: 3px solid var(--primary); pointer-events: none; }
+        
+        input[type="range"].ghost { position: absolute; width: 100%; height: 100%; top: 0; appearance: none; background: transparent; pointer-events: none; margin: 0; z-index: 10; }
+        input[type="range"].ghost::-webkit-slider-thumb {
+            appearance: none; width: 15px; height: 65px; background: #fff;
+            border-radius: 4px; pointer-events: auto; cursor: ew-resize;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5); border: 2px solid var(--primary);
+        }
+
+        .time-info { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Logger Status */
+        .status-box { margin-top: 20px; padding: 15px; background: var(--glass); border-radius: 12px; font-size: 0.9rem; text-align: center; display: none; border: 1px solid var(--border); }
+        .status-box i { margin-right: 8px; }
+        .pulse { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🎬 PRO EDITOR</h2>
-    
-    <input type="text" id="videoUrl" placeholder="TikTok ලින්ක් එක මෙතන දාන්න...">
-    <button id="loadBtn">Load Video</button>
-
-    <div class="video-wrapper" id="videoWrapper">
-        <video id="previewVideo" controls playsinline></video>
-        <div class="crop-overlay" id="cropOverlay"></div>
+<div class="studio-container">
+    <div class="header">
+        <h2><i class="ri-movie-2-line"></i> PRO STUDIO</h2>
+        <p>Advanced Media Editor & Uploader</p>
     </div>
 
-    <div class="range-container" id="trimControls">
-        <div class="range-track"></div>
-        <div class="range-fill" id="trimFill"></div>
-        <input type="range" class="dual" id="startTrim" min="0" max="100" value="0" step="0.1">
-        <input type="range" class="dual" id="endTrim" min="0" max="100" value="100" step="0.1">
-    </div>
-    <div id="timeDisplay" style="text-align: center; font-size: 12px; margin-bottom: 15px; display: none;">Trim: 0.0s - 0.0s</div>
-
-    <div class="controls-grid" id="cropControls">
-        <div class="crop-control"><label>Crop Top (%)</label><input type="range" id="cTop" min="0" max="40" value="0"></div>
-        <div class="crop-control"><label>Crop Bottom (%)</label><input type="range" id="cBot" min="0" max="40" value="0"></div>
-        <div class="crop-control"><label>Crop Left (%)</label><input type="range" id="cLeft" min="0" max="40" value="0"></div>
-        <div class="crop-control"><label>Crop Right (%)</label><input type="range" id="cRight" min="0" max="40" value="0"></div>
+    <div id="setupSection">
+        <div class="input-group">
+            <i class="ri-link"></i>
+            <input type="text" id="videoUrl" placeholder="Paste TikTok URL here...">
+        </div>
+        <button id="loadBtn" class="btn btn-primary"><i class="ri-download-cloud-2-line"></i> Load Editor</button>
     </div>
 
-    <button id="processBtn" style="display: none; background: #ff0055; color: white;">Trim, Crop & Upload to Telegram</button>
-    <div id="log"></div>
+    <div id="mainEditor">
+        <div class="player-wrapper" id="videoWrapper">
+            <video id="previewVideo" playsinline></video>
+            
+            <div class="crop-container" id="cropContainer">
+                <div class="crop-box" id="cropBox">
+                    <div class="handle handle-tl" data-handle="tl"></div>
+                    <div class="handle handle-tr" data-handle="tr"></div>
+                    <div class="handle handle-bl" data-handle="bl"></div>
+                    <div class="handle handle-br" data-handle="br"></div>
+                </div>
+            </div>
+
+            <div class="player-tools">
+                <button class="tool-btn" id="playPauseBtn"><i class="ri-play-fill"></i></button>
+                <span style="font-size: 0.8rem; font-weight: bold;"><i class="ri-crop-line"></i> Drag box edges to crop</span>
+            </div>
+        </div>
+
+        <div class="timeline-wrapper">
+            <div class="thumb-track" id="thumbTrack"></div>
+            <div class="dual-slider">
+                <div class="trim-fill" id="trimFill"></div>
+                <input type="range" class="ghost" id="startTrim" min="0" max="100" value="0" step="0.1">
+                <input type="range" class="ghost" id="endTrim" min="0" max="100" value="100" step="0.1">
+            </div>
+        </div>
+        
+        <div class="time-info">
+            <span id="startTimeDisplay">0.0s</span>
+            <span><i class="ri-scissors-cut-line"></i> Trim</span>
+            <span id="endTimeDisplay">0.0s</span>
+        </div>
+
+        <button id="processBtn" class="btn btn-accent"><i class="ri-telegram-line"></i> Export & Send to Telegram</button>
+    </div>
+
+    <div class="status-box" id="statusBox"></div>
 </div>
 
 <script>
-    // ⚠️ ඔබේ Telegram Bot Token සහ Channel ID මෙතැනට දාන්න
+    // 🔴 ඔයාගේ BOT TOKEN සහ CHAT ID මෙතනට දාන්න 🔴
     const BOT_TOKEN = "8974378669:AAG8rV50s_UhiJau-Vqgq22z6JYkYf_GwKQ"; 
     const CHAT_ID = "-1003754232314";     
 
@@ -92,54 +194,153 @@
     const startSlider = document.getElementById('startTrim');
     const endSlider = document.getElementById('endTrim');
     const trimFill = document.getElementById('trimFill');
-    const cropOverlay = document.getElementById('cropOverlay');
     
     let videoBlobData = null; 
     let videoDuration = 0;
 
-    function logMessage(msg) { document.getElementById('log').innerHTML = msg; }
+    function setStatus(msg, icon = 'ri-information-line', isPulse = false) {
+        const box = document.getElementById('statusBox');
+        box.style.display = 'block';
+        box.className = `status-box ${isPulse ? 'pulse' : ''}`;
+        box.innerHTML = `<i class="${icon}"></i> ${msg}`;
+    }
 
+    // --- VISUAL CROPPER LOGIC ---
+    const cropBox = document.getElementById('cropBox');
+    const cropContainer = document.getElementById('cropContainer');
+    let isDragging = false, isResizing = false, currentHandle = null;
+    let startX, startY, startW, startH, startLeft, startTop;
+
+    function resetCropBox() {
+        cropBox.style.left = '0px'; cropBox.style.top = '0px';
+        cropBox.style.width = '100%'; cropBox.style.height = '100%';
+    }
+
+    cropBox.addEventListener('mousedown', (e) => {
+        if(e.target.classList.contains('handle')) {
+            isResizing = true; currentHandle = e.target.getAttribute('data-handle');
+        } else {
+            isDragging = true;
+        }
+        startX = e.clientX; startY = e.clientY;
+        startW = cropBox.offsetWidth; startH = cropBox.offsetHeight;
+        startLeft = cropBox.offsetLeft; startTop = cropBox.offsetTop;
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if(!isDragging && !isResizing) return;
+        const dx = e.clientX - startX; const dy = e.clientY - startY;
+        const boundsW = cropContainer.offsetWidth; const boundsH = cropContainer.offsetHeight;
+
+        if(isDragging) {
+            let newL = Math.max(0, Math.min(startLeft + dx, boundsW - startW));
+            let newT = Math.max(0, Math.min(startTop + dy, boundsH - startH));
+            cropBox.style.left = `${newL}px`; cropBox.style.top = `${newT}px`;
+        } else if(isResizing) {
+            if(currentHandle.includes('r')) {
+                let newW = Math.max(50, Math.min(startW + dx, boundsW - startLeft));
+                cropBox.style.width = `${newW}px`;
+            }
+            if(currentHandle.includes('l')) {
+                let newW = Math.max(50, Math.min(startW - dx, startLeft + startW));
+                let newL = Math.max(0, startLeft + dx);
+                if(newL > 0 && newW > 50) { cropBox.style.width = `${newW}px`; cropBox.style.left = `${newL}px`; }
+            }
+            if(currentHandle.includes('b')) {
+                let newH = Math.max(50, Math.min(startH + dy, boundsH - startTop));
+                cropBox.style.height = `${newH}px`;
+            }
+            if(currentHandle.includes('t')) {
+                let newH = Math.max(50, Math.min(startH - dy, startTop + startH));
+                let newT = Math.max(0, startTop + dy);
+                if(newT > 0 && newH > 50) { cropBox.style.height = `${newH}px`; cropBox.style.top = `${newT}px`; }
+            }
+        }
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; isResizing = false; });
+
+    // --- THUMBNAIL GENERATOR LOGIC ---
+    async function generateThumbnails() {
+        const track = document.getElementById('thumbTrack');
+        track.innerHTML = '';
+        const numThumbs = 8; 
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 160; canvas.height = 90; 
+
+        for(let i=0; i<numThumbs; i++) {
+            const time = (videoDuration / numThumbs) * i;
+            video.currentTime = time;
+            await new Promise(r => {
+                video.addEventListener('seeked', r, {once:true});
+                setTimeout(r, 500); 
+            }); 
+            
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const img = new Image();
+            img.src = canvas.toDataURL('image/jpeg', 0.5);
+            track.appendChild(img);
+        }
+        video.currentTime = 0;
+    }
+
+    // --- MAIN APP LOGIC ---
     document.getElementById('loadBtn').addEventListener('click', async () => {
         const url = document.getElementById('videoUrl').value;
-        if (!url) return alert("ලින්ක් එකක් දෙන්න!");
+        if (!url) return alert("Please enter a valid link!");
         
         const loadBtn = document.getElementById('loadBtn');
         loadBtn.disabled = true;
-        logMessage("⏳ TikTok API එකෙන් වීඩියෝව සොයමින් පවතී...");
+        setStatus("Connecting to TikWM Server...", "ri-loader-4-line", true);
 
         try {
             const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
             const data = await res.json();
             
-            if(data.code !== 0 || !data.data.play) throw new Error("TikTok වීඩියෝව සොයාගත නොහැක.");
+            if(data.code !== 0 || !data.data.play) throw new Error("Could not fetch media.");
             const directVideoUrl = data.data.play;
 
-            logMessage("⏳ වීඩියෝව බ්‍රවුසරයට බාගත කරමින් පවතී...");
+            setStatus("Downloading media to browser engine...", "ri-download-cloud-line", true);
             const videoFetch = await fetch(directVideoUrl);
             videoBlobData = await videoFetch.blob();
             
             video.src = URL.createObjectURL(videoBlobData);
-            document.getElementById('videoWrapper').style.display = 'block';
             
-            video.onloadedmetadata = () => {
+            video.onloadedmetadata = async () => {
                 videoDuration = video.duration;
-                startSlider.max = videoDuration;
-                endSlider.max = videoDuration;
+                startSlider.max = videoDuration; endSlider.max = videoDuration;
                 endSlider.value = videoDuration;
                 
-                document.getElementById('trimControls').style.display = 'block';
-                document.getElementById('timeDisplay').style.display = 'block';
-                document.getElementById('cropControls').style.display = 'grid';
-                document.getElementById('processBtn').style.display = 'block';
+                // 💡 Swap UI: Hide URL Input, Show Editor
+                document.getElementById('setupSection').style.display = 'none';
+                document.getElementById('mainEditor').style.display = 'block';
+                
+                resetCropBox();
                 updateSliders();
-                logMessage("✅ වීඩියෝව සූදානම්! දැන් Trim සහ Crop කරන්න.");
+                
+                setStatus("Generating Timeline Thumbnails...", "ri-image-edit-line", true);
+                await generateThumbnails();
+
+                setStatus("Media ready! Adjust trim and crop box, then export.", "ri-check-double-line", false);
+                document.getElementById('statusBox').style.borderColor = "var(--primary)";
             };
         } catch (e) {
-            logMessage("❌ දෝෂයක්: " + e.message);
+            setStatus("Error: " + e.message, "ri-error-warning-line", false);
+            document.getElementById('statusBox').style.borderColor = "var(--accent)";
         } finally {
             loadBtn.disabled = false;
         }
     });
+
+    document.getElementById('playPauseBtn').addEventListener('click', () => {
+        if(video.paused) { video.play(); document.getElementById('playPauseBtn').innerHTML = '<i class="ri-pause-fill"></i>'; }
+        else { video.pause(); document.getElementById('playPauseBtn').innerHTML = '<i class="ri-play-fill"></i>'; }
+    });
+
+    video.addEventListener('ended', () => { document.getElementById('playPauseBtn').innerHTML = '<i class="ri-play-fill"></i>'; });
 
     function updateSliders() {
         let startVal = parseFloat(startSlider.value);
@@ -148,25 +349,21 @@
         
         trimFill.style.left = (startVal / videoDuration) * 100 + "%";
         trimFill.style.width = ((endVal - startVal) / videoDuration) * 100 + "%";
-        document.getElementById('timeDisplay').innerText = `Trim: ${startVal.toFixed(1)}s - ${endVal.toFixed(1)}s`;
-        video.currentTime = startVal;
+        
+        document.getElementById('startTimeDisplay').innerText = startVal.toFixed(1) + "s";
+        document.getElementById('endTimeDisplay').innerText = endVal.toFixed(1) + "s";
+        
+        if(document.activeElement === startSlider) video.currentTime = startVal;
+        if(document.activeElement === endSlider) video.currentTime = endVal;
     }
     startSlider.addEventListener('input', updateSliders);
     endSlider.addEventListener('input', updateSliders);
 
-    function updateCropBox() {
-        cropOverlay.style.top = document.getElementById('cTop').value + "%";
-        cropOverlay.style.bottom = document.getElementById('cBot').value + "%";
-        cropOverlay.style.left = document.getElementById('cLeft').value + "%";
-        cropOverlay.style.right = document.getElementById('cRight').value + "%";
-    }
-    ['cTop', 'cBot', 'cLeft', 'cRight'].forEach(id => document.getElementById(id).addEventListener('input', updateCropBox));
-
+    // --- EXPORT & UPLOAD ---
     document.getElementById('processBtn').addEventListener('click', async () => {
-        if(!videoBlobData) return alert("වීඩියෝ දත්ත හමුනොවුනි!");
-        
-        if (BOT_TOKEN === "ඔබේ_BOT_TOKEN_එක_මෙතන_දාන්න") {
-            return alert("කරුණාකර කේතය තුළට ඔබගේ BOT TOKEN සහ CHAT ID ඇතුලත් කරන්න!");
+        if(!videoBlobData) return alert("No media loaded!");
+        if (BOT_TOKEN === "YOUR_BOT_TOKEN_HERE") {
+            return alert("Please insert your Telegram Bot Token in the script!");
         }
 
         const btn = document.getElementById('processBtn');
@@ -176,24 +373,34 @@
         const durationT = parseFloat(endSlider.value) - startT;
 
         const natW = video.videoWidth; const natH = video.videoHeight;
-        const cropX = Math.floor((document.getElementById('cLeft').value / 100) * natW);
-        const cropY = Math.floor((document.getElementById('cTop').value / 100) * natH);
-        const cropW = Math.floor(natW - cropX - ((document.getElementById('cRight').value / 100) * natW));
-        const cropH = Math.floor(natH - cropY - ((document.getElementById('cBot').value / 100) * natH));
+        const wrapW = cropContainer.offsetWidth; const wrapH = cropContainer.offsetHeight;
+        
+        const leftPerc = cropBox.offsetLeft / wrapW;
+        const topPerc = cropBox.offsetTop / wrapH;
+        const widthPerc = cropBox.offsetWidth / wrapW;
+        const heightPerc = cropBox.offsetHeight / wrapH;
+
+        const cropX = Math.floor(leftPerc * natW);
+        const cropY = Math.floor(topPerc * natH);
+        const cropW = Math.floor(widthPerc * natW);
+        const cropH = Math.floor(heightPerc * natH);
 
         try {
-            logMessage("⚙️ FFmpeg පද්ධතිය සූදානම් කරමින්...");
+            setStatus("Initializing Core Rendering Engine...", "ri-settings-4-line", true);
             
+            // 💡 814.ffmpeg.js Worker ERROR FIX (Using classWorkerURL)
             if (!ffmpeg.loaded) {
-                const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+                const coreURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+                const ffmpegURL = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd';
+                
                 await ffmpeg.load({
-                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-                    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
+                    coreURL: await toBlobURL(`${coreURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${coreURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                    classWorkerURL: await toBlobURL(`${ffmpegURL}/814.ffmpeg.js`, 'text/javascript')
                 });
             }
 
-            logMessage("✂️ වීඩියෝව Edit කරමින් පවතී (Trim & Crop)... මඳක් රැඳී සිටින්න.");
+            setStatus("Rendering Video (Applying Trim & Crop)...", "ri-scissors-cut-line", true);
             await ffmpeg.writeFile('input.mp4', await fetchFile(videoBlobData));
             
             await ffmpeg.exec([
@@ -207,7 +414,7 @@
                 'output.mp4'
             ]);
 
-            logMessage("📤 සාර්ථකයි! දැන් Telegram චැනලය වෙත Upload වෙමින් පවතී...");
+            setStatus("Rendering complete. Uploading to Telegram Channel...", "ri-upload-cloud-2-line", true);
             const fileData = await ffmpeg.readFile('output.mp4');
             const outputBlob = new Blob([fileData.buffer], { type: 'video/mp4' });
 
@@ -220,14 +427,17 @@
             const uploadData = await uploadRes.json();
 
             if (uploadData.ok) {
-                logMessage("✅ සාර්ථකයි! වීඩියෝව Telegram චැනලයට යවන ලදි.");
+                setStatus("Successfully Uploaded to Telegram!", "ri-checkbox-circle-fill", false);
+                document.getElementById('statusBox').style.borderColor = "#00ff88";
+                document.getElementById('statusBox').style.color = "#00ff88";
             } else {
-                throw new Error("Telegram දෝෂයකි: " + uploadData.description);
+                throw new Error("Telegram API Error: " + uploadData.description);
             }
 
         } catch (e) {
             console.error(e);
-            logMessage("❌ දෝෂයක්: " + e.message);
+            setStatus("Process Failed: " + e.message, "ri-close-circle-fill", false);
+            document.getElementById('statusBox').style.borderColor = "var(--accent)";
         } finally {
             btn.disabled = false;
         }
