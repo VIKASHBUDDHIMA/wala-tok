@@ -25,8 +25,7 @@
     </div>
 
     <script>
-        // මෙතන තියෙන ලින්ක් එක මකලා, ඔයාගේ Google Script එකෙන් ආපු දිග ලින්ක් එක දාන්න 
-        // උදාහරණ: const MY_API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
+        // ඔයාගේ Google Script එකෙන් ආපු දිග ලින්ක් එක පහතින් ඇතුලත් කරන්න
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec"; 
         
         // ඔබට අවශ්‍ය Tags
@@ -37,32 +36,41 @@
 
             for (let tag of TAGS) {
                 try {
-                    // කෙළින්ම TikWM එකට යන්නේ නැතුව, අපේ Google API එක හරහා ඩේටා ඉල්ලීම
                     const response = await fetch(`${MY_API_URL}?tag=${tag}`);
                     
                     if (response.ok) {
                         const text = await response.text();
                         
-                        // JSON එකෙන් Video ID වෙන් කරගැනීම
-                        const regex = /"video_id":"(\d+)"/g;
-                        const altRegex = /"id":"(\d+)"/g; // සමහරවිට id විදිහටත් එන්න පුළුවන්
-                        
+                        // ක්‍රමය 1: JSON එකක් විදිහට හරියටම Parse කර ID වෙන් කර ගැනීම
+                        try {
+                            const json = JSON.parse(text);
+                            let videos = [];
+                            if (json.data) {
+                                if (Array.isArray(json.data)) videos = json.data;
+                                else if (Array.isArray(json.data.videos)) videos = json.data.videos;
+                            }
+                            
+                            videos.forEach(v => {
+                                if (v.video_id) allVideoIds.push(String(v.video_id));
+                                else if (v.id) allVideoIds.push(String(v.id));
+                            });
+                        } catch (jsonErr) {
+                            console.log("Standard JSON parsing skipped, using robust fallback...");
+                        }
+
+                        // ක්‍රමය 2 (Fallback): Quotes තිබ්බත් නැතත් ID එක අහුකර ගන්නා සුපිරි Regex එකක්
+                        const flexibleRegex = /"(?:video_id|id)"\s*:\s*"*(\d+)"*/g;
                         let match;
-                        while ((match = regex.exec(text)) !== null) {
+                        while ((match = flexibleRegex.exec(text)) !== null) {
                             allVideoIds.push(match[1]);
                         }
-                        while ((match = altRegex.exec(text)) !== null) {
-                            allVideoIds.push(match[1]);
-                        }
-                        
-                        console.log(`Loaded videos for #${tag} via Custom API`);
                     }
                 } catch (e) {
                     console.log(`Error fetching #${tag}:`, e);
                 }
             }
 
-            // ඩූප්‍ලිකේට් අයින් කිරීම
+            // ඩූප්‍ලිකේට් ID අයින් කිරීම
             return [...new Set(allVideoIds)];
         }
 
@@ -72,8 +80,10 @@
 
             let videoIds = await fetchVideosFromMyAPI();
 
+            console.log("Total unique videos found:", videoIds.length);
+
             if (!videoIds || videoIds.length === 0) {
-                loading.innerText = "No videos found. Check if the Google Script link is correct.";
+                loading.innerText = "No videos found. TikWM might be reloading. Try refreshing in a few moments.";
                 return;
             }
 
@@ -81,8 +91,8 @@
             videoIds.sort(() => Math.random() - 0.5);
             loading.remove();
 
-            // උපරිම වීඩියෝ 30ක් පෙන්වීම
-            videoIds.slice(0, 30).forEach(id => {
+            // උපරිම වීඩියෝ 32ක් පෙන්වීම
+            videoIds.slice(0, 32).forEach(id => {
                 const card = document.createElement('div');
                 card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
                 
