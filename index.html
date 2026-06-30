@@ -15,59 +15,100 @@
         <h1 class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse">
             Fresh Video Stream
         </h1>
-        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">100% Automated • Auto-Refreshed</p>
+        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">100% Realtime • Live Automated</p>
     </header>
 
     <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        <div id="loading" class="col-span-full text-center text-gray-500 py-20 text-sm font-medium">
-            Fetching the latest content...
+        <div id="loading" class="col-span-full text-center text-gray-500 py-20 text-sm font-medium animate-bounce">
+            Connecting to stream and fetching the latest content...
         </div>
     </div>
 
     <script>
+        // ඔබට අවශ්‍ය වීඩියෝ වර්ග (Hashtags) මෙතනට දෙන්න.
+        // කිසිම දෙයක් නොකර ඔටෝමැටිකවම මේවට අදාළ අලුත්ම වීඩියෝ වෙබ් අඩවියට ඇදලා ගනී.
+        const TAGS = ["srilanka", "trending", "dance"];
+
+        // වීඩියෝ ලබාගන්නා පොදු සර්වර් ලැයිස්තුව
+        const INSTANCES = [
+            "https://proxitok.pussthecat.org",
+            "https://tok.adminforge.de",
+            "https://proxitok.privacydev.net",
+            "https://tt.opnxng.com"
+        ];
+
+        async function fetchVideosFromBrowser() {
+            let allVideoIds = [];
+
+            // හැම ටැග් එකකටම අදාළ වීඩියෝ සෙවීම
+            for (let tag of TAGS) {
+                for (let instance of INSTANCES) {
+                    try {
+                        const targetUrl = `${instance}/tag/${tag}/rss`;
+                        // බ්‍රවුසර් එකේ CORS Error එන එක නැති කරන්න පාවිච්චි කරන නිදහස් Proxy එකක්
+                        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                        
+                        const response = await fetch(proxyUrl);
+                        if (response.ok) {
+                            const text = await response.text();
+                            
+                            // RSS එක ඇතුලෙන් වීඩියෝ ID වෙන් කරගැනීම
+                            const regex = /\/video\/(\d+)/g;
+                            let match;
+                            let foundCount = 0;
+
+                            while ((match = regex.exec(text)) !== null) {
+                                allVideoIds.push(match[1]);
+                                foundCount++;
+                            }
+
+                            if (foundCount > 0) {
+                                console.log(`Successfully loaded ${foundCount} videos for #${tag}`);
+                                break; // මේ සර්වර් එක වැඩ කලා නම් ඊළඟ ටැග් එකට යනවා
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Instance failed, trying next one...");
+                    }
+                }
+            }
+
+            // ඩූප්‍ලිකේට් අයින් කිරීම
+            return [...new Set(allVideoIds)];
+        }
+
         async function loadGallery() {
             const gallery = document.getElementById('gallery');
             const loading = document.getElementById('loading');
 
-            try {
-                const response = await fetch('./videos.json');
-                
-                // HTML ෆයිල් එකක් ආවොත් එරර් එකක් පෙන්වීම වැලැක්වීම
-                const contentType = response.headers.get("content-type");
-                if (!contentType || !contentType.includes("application/json")) {
-                    throw new Error("JSON not found yet");
-                }
+            // කෙළින්ම බ්‍රවුසර් එකෙන්ම අලුත්ම වීඩියෝ ටික Fetch කරගැනීම
+            let videoIds = await fetchVideosFromBrowser();
 
-                let videoIds = await response.json();
-
-                if(!videoIds || videoIds.length === 0 || videoIds[0] === "7285145893123456789") {
-                    loading.innerText = "Waiting for GitHub Bot to fetch real videos. Please refresh in a few minutes.";
-                    return;
-                }
-
-                videoIds.sort(() => Math.random() - 0.5);
-                loading.remove();
-
-                videoIds.forEach(id => {
-                    const card = document.createElement('div');
-                    card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
-                    
-                    card.innerHTML = `
-                        <iframe 
-                            src="https://www.tiktok.com/embed/v2/${id}" 
-                            class="w-full h-[560px] rounded-xl border-0"
-                            allowfullscreen 
-                            scrolling="no"
-                            allow="encrypted-media;">
-                        </iframe>
-                    `;
-                    gallery.appendChild(card);
-                });
-
-            } catch (error) {
-                console.error("Error:", error);
-                loading.innerText = "System is updating. The videos will appear here shortly.";
+            if (!videoIds || videoIds.length === 0) {
+                loading.innerText = "Temporary connection issue. Please refresh the page.";
+                return;
             }
+
+            // හැමවිටම වීඩියෝ අහඹු ලෙස මාරු කිරීම (Shuffle) නිසා හැම පාරම අලුත් ඒවා පෙනේ
+            videoIds.sort(() => Math.random() - 0.5);
+            loading.remove();
+
+            // උපරිම වීඩියෝ 40ක් ගැලරියට එකතු කිරීම (සයිට් එක ස්ලෝ වීම වැලැක්වීමට)
+            videoIds.slice(0, 40).forEach(id => {
+                const card = document.createElement('div');
+                card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
+                
+                card.innerHTML = `
+                    <iframe 
+                        src="https://www.tiktok.com/embed/v2/${id}" 
+                        class="w-full h-[560px] rounded-xl border-0"
+                        allowfullscreen 
+                        scrolling="no"
+                        allow="encrypted-media;">
+                    </iframe>
+                `;
+                gallery.appendChild(card);
+            });
         }
 
         window.onload = loadGallery;
