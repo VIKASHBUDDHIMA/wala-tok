@@ -7,22 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #080c14; color: #ffffff; }
-        /* Player එකේ ලස්සනට පේන්න හදපු CSS */
-        .video-container {
+        /* HTML5 Custom video container wrapper */
+        .video-wrapper {
             position: relative;
             width: 100%;
-            padding-top: 177.77%; /* 16:9 Aspect Ratio (TikTok style) */
-            border-radius: 12px;
+            padding-top: 177.77%; /* 16:9 vertical format */
+            background: #0d1321;
+            border-radius: 16px;
             overflow: hidden;
-            background: #111827;
         }
-        .video-container iframe {
+        .video-wrapper video {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border: none;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -32,83 +32,126 @@
         <h1 class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse">
             Fresh Video Stream
         </h1>
-        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">Direct API Embedded Player</p>
+        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">100% Native HTML5 Player • Infinite Scroll</p>
     </header>
 
     <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        <div id="loading" class="col-span-full text-center text-gray-500 py-20 text-sm font-medium animate-pulse">
-            Fetching trending videos from API... Please wait...
         </div>
+
+    <div id="scroll-trigger" class="text-center py-10 text-gray-500 text-sm font-medium">
+        <span id="loading-text" class="animate-pulse">Loading more fresh content...</span>
     </div>
 
     <script>
-        // අනිවාර්යයෙන්ම ඔයාගේ අලුත් Google Script ලින්ක් එක මෙතනට දාන්න!
+        // [අනිවාර්යයි] ඔයාගේ අලුත්ම Google Script ලින්ක් එක මෙතනට දාන්න
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec"; 
         
-        const TAGS = ["srilanka_actress", "dasuni_senethma", "rashmika_mandana_hot","nethmi_roshel","samadhi_rathnayaka", "kello_puka" , "srilanka_niliyo" , "srilanka_hot_kello" , "shanudri" , "praveena_disanayaka"];
+        // වීඩියෝ එකතු කරගන්නා Pool එක සහ දැනට පාවිච්චි කරන Tags
+        let videoPool = [];
+        const TAGS = ["srilanka", "trending", "dance", "foryou"];
+        let currentTagIndex = 0;
+        let isLoading = false;
 
-        async function fetchVideosFromMyAPI() {
-            let allVideoIds = [];
+        // API එකෙන් ඩේටා රැගෙන Pool එකට දැමීම
+        async function fetchMoreVideos() {
+            if (isLoading) return;
+            isLoading = true;
+            document.getElementById('loading-text').innerText = "Fetching raw video streams...";
 
-            for (let tag of TAGS) {
-                try {
-                    const response = await fetch(`${MY_API_URL}?tag=${tag}`);
-                    
-                    if (response.ok) {
-                        const jsonText = await response.text();
-                        console.log(`Response for ${tag}:`, jsonText.substring(0, 100) + "..."); // Console එකේ බලාගන්න 
-                        
-                        // Regex මඟින් ID එක ඉතා නිවැරදිව අල්ලා ගැනීම
-                        const regex = /"(?:video_id|id)"\s*:\s*"?(\d{15,25})"?/g;
-                        let match;
-                        while ((match = regex.exec(jsonText)) !== null) {
-                            allVideoIds.push(match[1]);
-                        }
+            const tag = TAGS[currentTagIndex];
+            currentTagIndex = (currentTagIndex + 1) % TAGS.length; // ඊළඟ පාරට වෙන ටැග් එකක් සෙට් කිරීම
+
+            try {
+                const response = await fetch(`${MY_API_URL}?tag=${tag}`);
+                if (response.ok) {
+                    const json = await response.json();
+                    let rawVideos = [];
+
+                    if (json.data) {
+                        if (Array.isArray(json.data)) rawVideos = json.data;
+                        else if (Array.isArray(json.data.videos)) rawVideos = json.data.videos;
                     }
-                } catch (e) {
-                    console.error(`Error fetching #${tag}:`, e);
+
+                    // අපිට අවශ්‍ය කරන Direct MP4 Link එක සහ Cover Image එක වෙන් කර ගැනීම
+                    let fetchedBatch = rawVideos.map(v => ({
+                        id: v.id || v.video_id,
+                        playUrl: v.play || v.wmplay, // Direct Video URL
+                        cover: v.cover || v.origin_cover, // Thumbnail Image
+                        title: v.title || "Trending TikTok Video"
+                    })).filter(v => v.playUrl); // ලින්ක් එකක් නැති ඒවා අයින් කරයි
+
+                    if (fetchedBatch.length > 0) {
+                        // වීඩියෝ ටික කලවම් කරලා Pool එකට එකතු කිරීම
+                        fetchedBatch.sort(() => Math.random() - 0.5);
+                        videoPool.push(...fetchedBatch);
+                        console.log(`Successfully added ${fetchedBatch.length} native videos to queue from #${tag}`);
+                    }
                 }
+            } catch (e) {
+                console.error("API error fetching batch:", e);
             }
-            return [...new Set(allVideoIds)];
+
+            isLoading = false;
+            renderNextBatch();
         }
 
-        async function loadGallery() {
+        // වෙබ් පිටුවට වීඩියෝ Render කිරීම (එක් වරකට 8 බැගින්)
+        function renderNextBatch() {
             const gallery = document.getElementById('gallery');
-            const loading = document.getElementById('loading');
-
-            let videoIds = await fetchVideosFromMyAPI();
-            console.log("Total unique videos ready to play:", videoIds.length);
-
-            if (!videoIds || videoIds.length === 0) {
-                loading.innerHTML = "<span class='text-red-500'>No videos found. Please check if the API is returning data.</span>";
+            
+            if (videoPool.length === 0) {
+                if (!isLoading) fetchMoreVideos();
                 return;
             }
 
-            // වීඩියෝ මාරු කිරීම
-            videoIds.sort(() => Math.random() - 0.5);
-            loading.remove();
+            const batchToRender = videoPool.splice(0, 8); // Pool එකෙන් වීඩියෝ 8ක් කපා ගැනීම
 
-            // උපරිම වීඩියෝ 24ක් පෙන්වීම 
-            videoIds.slice(0, 24).forEach(id => {
+            batchToRender.forEach(video => {
                 const card = document.createElement('div');
-                card.className = "bg-gray-900 rounded-2xl p-2 shadow-2xl border border-gray-800/60 hover:border-pink-500/50 transition duration-300";
+                card.className = "bg-gray-900 rounded-2xl p-2 shadow-2xl border border-gray-800/60 hover:border-purple-500/40 transition duration-300 flex flex-col justify-between";
                 
-                // TikTok Official iframe Player එක
+                // HTML5 Native Video Tag එක නිර්මාණය
                 card.innerHTML = `
-                    <div class="video-container">
-                        <iframe 
-                            src="https://www.tiktok.com/embed/v2/${id}" 
-                            allowfullscreen 
-                            scrolling="no"
-                            allow="encrypted-media;">
-                        </iframe>
+                    <div class="video-wrapper">
+                        <video 
+                            controls 
+                            loop 
+                            playsinline 
+                            preload="none" 
+                            poster="${video.cover}"
+                            class="rounded-xl">
+                            <source src="${video.playUrl}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
                     </div>
+                    <p class="text-xs text-gray-400 mt-2 px-1 line-clamp-1 font-light">${video.title}</p>
                 `;
                 gallery.appendChild(card);
             });
+
+            document.getElementById('loading-text').innerText = "Scroll down for more videos";
         }
 
-        window.onload = loadGallery;
+        // Infinite Scroll - පරිශීලකයා පල්ලෙහාට යද්දී ස්වයංක්‍රීයව හඳුනාගැනීම
+        window.onscroll = function() {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 900) {
+                // Pool එක හිස් වේගෙන එනකොට අලුත් ඒවා ඉල්ලනවා, නැත්නම් තියෙන ඒවා පෙන්වනවා
+                if (videoPool.length < 5 && !isLoading) {
+                    fetchMoreVideos();
+                } else {
+                    renderNextBatch();
+                }
+            }
+        };
+
+        // මුලින්ම පිටුව Load වන විට ක්‍රියාත්මක වීම
+        window.onload = async () => {
+            await fetchMoreVideos(); // පළමු වීඩියෝ තොගය ගැනීම
+            // සයිට් එක පිරෙන්න මදි වගේ නම් තව පාරක් රෙන්ඩර් කරනවා
+            if(document.body.offsetHeight <= window.innerHeight) {
+                renderNextBatch();
+            }
+        };
     </script>
 </body>
 </html>
