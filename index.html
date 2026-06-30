@@ -20,16 +20,15 @@
 
     <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         <div id="loading" class="col-span-full text-center text-gray-500 py-20 text-sm font-medium animate-bounce">
-            Connecting to stream and fetching the latest content...
+            Connecting to secure stream and fetching the latest content...
         </div>
     </div>
 
     <script>
-        // ඔබට අවශ්‍ය වීඩියෝ වර්ග (Hashtags) මෙතනට දෙන්න.
-        // කිසිම දෙයක් නොකර ඔටෝමැටිකවම මේවට අදාළ අලුත්ම වීඩියෝ වෙබ් අඩවියට ඇදලා ගනී.
+        // ඔබට අවශ්‍ය වීඩියෝ මාතෘකා (Tags)
         const TAGS = ["srilanka", "trending", "dance"];
 
-        // වීඩියෝ ලබාගන්නා පොදු සර්වර් ලැයිස්තුව
+        // වඩාත්ම ස්ථාවර පොදු සර්වර් ලැයිස්තුව
         const INSTANCES = [
             "https://proxitok.pussthecat.org",
             "https://tok.adminforge.de",
@@ -40,36 +39,46 @@
         async function fetchVideosFromBrowser() {
             let allVideoIds = [];
 
-            // හැම ටැග් එකකටම අදාළ වීඩියෝ සෙවීම
             for (let tag of TAGS) {
                 for (let instance of INSTANCES) {
-                    try {
-                        const targetUrl = `${instance}/tag/${tag}/rss`;
-                        // බ්‍රවුසර් එකේ CORS Error එන එක නැති කරන්න පාවිච්චි කරන නිදහස් Proxy එකක්
-                        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
-                        
-                        const response = await fetch(proxyUrl);
-                        if (response.ok) {
-                            const text = await response.text();
-                            
-                            // RSS එක ඇතුලෙන් වීඩියෝ ID වෙන් කරගැනීම
-                            const regex = /\/video\/(\d+)/g;
-                            let match;
-                            let foundCount = 0;
+                    const targetUrl = `${instance}/tag/${tag}/rss`;
+                    
+                    // බ්ලොක් නොවී වැඩ කරන ප්‍රධාන Proxy ක්‍රම 2ක් (එකක් Fail වුනොත් අනෙක ක්‍රියාත්මක වේ)
+                    const proxies = [
+                        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+                        `https://cors-anywhere.azm.workers.dev/${targetUrl}`
+                    ];
 
-                            while ((match = regex.exec(text)) !== null) {
-                                allVideoIds.push(match[1]);
-                                foundCount++;
-                            }
+                    let fetched = false;
 
-                            if (foundCount > 0) {
-                                console.log(`Successfully loaded ${foundCount} videos for #${tag}`);
-                                break; // මේ සර්වර් එක වැඩ කලා නම් ඊළඟ ටැග් එකට යනවා
+                    for (let proxyUrl of proxies) {
+                        try {
+                            const response = await fetch(proxyUrl);
+                            if (response.ok) {
+                                const text = await response.text();
+                                
+                                // RSS එකෙන් වීඩියෝ ID වෙන් කර ගැනීම
+                                const regex = /\/video\/(\d+)/g;
+                                let match;
+                                let foundCount = 0;
+
+                                while ((match = regex.exec(text)) !== null) {
+                                    allVideoIds.push(match[1]);
+                                    foundCount++;
+                                }
+
+                                if (foundCount > 0) {
+                                    console.log(`Successfully loaded ${foundCount} videos for #${tag} using proxy.`);
+                                    fetched = true;
+                                    break; // සාර්ථක නම් ඊළඟ Proxy එකට යන්නේ නැත
+                                }
                             }
+                        } catch (e) {
+                            console.log("Proxy connection failed, trying fallback...");
                         }
-                    } catch (e) {
-                        console.log("Instance failed, trying next one...");
                     }
+
+                    if (fetched) break; // මේ සර්වර් එකෙන් වැඩේ හරි නම් ඊළඟ සර්වර් එකට යන්නේ නැත
                 }
             }
 
@@ -81,19 +90,18 @@
             const gallery = document.getElementById('gallery');
             const loading = document.getElementById('loading');
 
-            // කෙළින්ම බ්‍රවුසර් එකෙන්ම අලුත්ම වීඩියෝ ටික Fetch කරගැනීම
             let videoIds = await fetchVideosFromBrowser();
 
             if (!videoIds || videoIds.length === 0) {
-                loading.innerText = "Temporary connection issue. Please refresh the page.";
+                loading.innerText = "Temporary connection issue. Please refresh the page in a few seconds.";
                 return;
             }
 
-            // හැමවිටම වීඩියෝ අහඹු ලෙස මාරු කිරීම (Shuffle) නිසා හැම පාරම අලුත් ඒවා පෙනේ
+            // හැමවිටම වීඩියෝ මාරු කිරීම (Shuffle)
             videoIds.sort(() => Math.random() - 0.5);
             loading.remove();
 
-            // උපරිම වීඩියෝ 40ක් ගැලරියට එකතු කිරීම (සයිට් එක ස්ලෝ වීම වැලැක්වීමට)
+            // උපරිම වීඩියෝ 40ක් පෙන්වීම
             videoIds.slice(0, 40).forEach(id => {
                 const card = document.createElement('div');
                 card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
