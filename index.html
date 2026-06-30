@@ -15,70 +15,65 @@
         <h1 class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse">
             Fresh Video Stream
         </h1>
-        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">100% Realtime • Live Automated</p>
+        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">100% Realtime • Direct High-Speed API</p>
     </header>
 
     <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
         <div id="loading" class="col-span-full text-center text-gray-500 py-20 text-sm font-medium animate-bounce">
-            Connecting to secure stream and fetching the latest content...
+            Connecting to high-speed stream and fetching content...
         </div>
     </div>
 
     <script>
-        // ඔබට අවශ්‍ය වීඩියෝ මාතෘකා (Tags)
+        // ඔබට අවශ්‍ය වීඩියෝ මාතෘකා (Keywords) මෙතනට දෙන්න
         const TAGS = ["srilanka", "trending", "dance"];
 
-        // වඩාත්ම ස්ථාවර පොදු සර්වර් ලැයිස්තුව
-        const INSTANCES = [
-            "https://proxitok.pussthecat.org",
-            "https://tok.adminforge.de",
-            "https://proxitok.privacydev.net",
-            "https://tt.opnxng.com"
-        ];
-
-        async function fetchVideosFromBrowser() {
+        async function fetchVideosFromAPI() {
             let allVideoIds = [];
 
             for (let tag of TAGS) {
-                for (let instance of INSTANCES) {
-                    const targetUrl = `${instance}/tag/${tag}/rss`;
+                try {
+                    // ලෝකයේ වඩාත්ම ස්ථාවර නිදහස් TikTok API එකක් භාවිතා කිරීම
+                    const url = `https://www.tikwm.com/api/posts/hashtag?keywords=${tag}`;
+                    const response = await fetch(url);
                     
-                    // බ්ලොක් නොවී වැඩ කරන ප්‍රධාන Proxy ක්‍රම 2ක් (එකක් Fail වුනොත් අනෙක ක්‍රියාත්මක වේ)
-                    const proxies = [
-                        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                        `https://cors-anywhere.azm.workers.dev/${targetUrl}`
-                    ];
-
-                    let fetched = false;
-
-                    for (let proxyUrl of proxies) {
-                        try {
-                            const response = await fetch(proxyUrl);
-                            if (response.ok) {
-                                const text = await response.text();
-                                
-                                // RSS එකෙන් වීඩියෝ ID වෙන් කර ගැනීම
-                                const regex = /\/video\/(\d+)/g;
-                                let match;
-                                let foundCount = 0;
-
-                                while ((match = regex.exec(text)) !== null) {
-                                    allVideoIds.push(match[1]);
-                                    foundCount++;
-                                }
-
-                                if (foundCount > 0) {
-                                    console.log(`Successfully loaded ${foundCount} videos for #${tag} using proxy.`);
-                                    fetched = true;
-                                    break; // සාර්ථක නම් ඊළඟ Proxy එකට යන්නේ නැත
-                                }
-                            }
-                        } catch (e) {
-                            console.log("Proxy connection failed, trying fallback...");
+                    if (response.ok) {
+                        const json = await response.json();
+                        
+                        // JSON එක ඇතුලෙන් වීඩියෝ ID ටික සුරක්ෂිතව වෙන් කර ගැනීම
+                        const dataString = JSON.stringify(json);
+                        const matches = dataString.match(/"video_id":"(\d+)"/g) || dataString.match(/"id":"(\d+)"/g);
+                        
+                        if (matches) {
+                            matches.forEach(m => {
+                                const id = m.match(/\d+/)[0];
+                                allVideoIds.push(id);
+                            });
+                            console.log(`Loaded videos for #${tag}`);
                         }
                     }
+                } catch (e) {
+                    console.log(`Failed to fetch tag #${tag}, trying backup...`);
+                }
+            }
 
-                    if (fetched) break; // මේ සර්වර් එකෙන් වැඩේ හරි නම් ඊළඟ සර්වර් එකට යන්නේ නැත
+            // කිසියම් හේතුවකින් Tags වැඩ නොකලොත් Global Trending ලිස්ට් එක ඔටෝ ලෝඩ් කරන Fallback එක
+            if (allVideoIds.length === 0) {
+                try {
+                    const trendResponse = await fetch("https://www.tikwm.com/api/feed/list");
+                    if (trendResponse.ok) {
+                        const json = await trendResponse.json();
+                        const dataString = JSON.stringify(json);
+                        const matches = dataString.match(/"video_id":"(\d+)"/g) || dataString.match(/"id":"(\d+)"/g);
+                        if (matches) {
+                            matches.forEach(m => {
+                                const id = m.match(/\d+/)[0];
+                                allVideoIds.push(id);
+                            });
+                        }
+                    }
+                } catch(err) {
+                    console.error("All endpoints failed", err);
                 }
             }
 
@@ -90,19 +85,19 @@
             const gallery = document.getElementById('gallery');
             const loading = document.getElementById('loading');
 
-            let videoIds = await fetchVideosFromBrowser();
+            let videoIds = await fetchVideosFromAPI();
 
             if (!videoIds || videoIds.length === 0) {
-                loading.innerText = "Temporary connection issue. Please refresh the page in a few seconds.";
+                loading.innerText = "Connection refreshing. Please reload the page in a few moments.";
                 return;
             }
 
-            // හැමවිටම වීඩියෝ මාරු කිරීම (Shuffle)
+            // වීඩියෝ හැමවිටම මාරු කිරීම (Shuffle)
             videoIds.sort(() => Math.random() - 0.5);
             loading.remove();
 
-            // උපරිම වීඩියෝ 40ක් පෙන්වීම
-            videoIds.slice(0, 40).forEach(id => {
+            // උපරිම වීඩියෝ 24ක් පෙන්වීම (පිටුව බර වීම වැලැක්වීමට)
+            videoIds.slice(0, 24).forEach(id => {
                 const card = document.createElement('div');
                 card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
                 
