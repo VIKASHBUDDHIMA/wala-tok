@@ -30,20 +30,24 @@
             const loading = document.getElementById('loading');
 
             try {
-                // GitHub Actions මගින් සාදන ලද json ෆයිල් එක Fetch කිරීම
                 const response = await fetch('./videos.json');
+                
+                // HTML ෆයිල් එකක් ආවොත් එරර් එකක් පෙන්වීම වැලැක්වීම
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("JSON not found yet");
+                }
+
                 let videoIds = await response.json();
 
-                if(!videoIds || videoIds.length === 0) {
-                    loading.innerText = "No fresh videos found. Waiting for first auto-run.";
+                if(!videoIds || videoIds.length === 0 || videoIds[0] === "7285145893123456789") {
+                    loading.innerText = "Waiting for GitHub Bot to fetch real videos. Please refresh in a few minutes.";
                     return;
                 }
 
-                // හැමවිටම වීඩියෝ අහඹု ලෙස මාරු කිරීම (Shuffle)
                 videoIds.sort(() => Math.random() - 0.5);
                 loading.remove();
 
-                // TikTok Embeds සාදා ගැලරියට එකතු කිරීම
                 videoIds.forEach(id => {
                     const card = document.createElement('div');
                     card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
@@ -62,78 +66,7 @@
 
             } catch (error) {
                 console.error("Error:", error);
-                loading.innerText = "Please wait a moment. The first batch of videos is being fetched on GitHub...";
-            }
-        }
-
-        window.onload = loadGallery;
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fresh Premium Gallery</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #080c14; color: #ffffff; }
-    </style>
-</head>
-<body class="p-4 font-sans selection:bg-pink-500 selection:text-white">
-
-    <header class="text-center my-6">
-        <h1 class="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-pulse">
-            Fresh Video Stream
-        </h1>
-        <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">100% Automated • Auto-Refreshed</p>
-    </header>
-
-    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-        <div id="loading" class="col-span-full text-center text-gray-500 py-20 text-sm font-medium">
-            Fetching the latest content...
-        </div>
-    </div>
-
-    <script>
-        async function loadGallery() {
-            const gallery = document.getElementById('gallery');
-            const loading = document.getElementById('loading');
-
-            try {
-                // GitHub Actions මගින් සාදන ලද json ෆයිල් එක Fetch කිරීම
-                const response = await fetch('./videos.json');
-                let videoIds = await response.json();
-
-                if(!videoIds || videoIds.length === 0) {
-                    loading.innerText = "No fresh videos found. Waiting for first auto-run.";
-                    return;
-                }
-
-                // හැමවිටම වීඩියෝ අහඹု ලෙස මාරු කිරීම (Shuffle)
-                videoIds.sort(() => Math.random() - 0.5);
-                loading.remove();
-
-                // TikTok Embeds සාදා ගැලරියට එකතු කිරීම
-                videoIds.forEach(id => {
-                    const card = document.createElement('div');
-                    card.className = "bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/60 p-2 flex justify-center items-center hover:border-pink-500/40 transition duration-300";
-                    
-                    card.innerHTML = `
-                        <iframe 
-                            src="https://www.tiktok.com/embed/v2/${id}" 
-                            class="w-full h-[560px] rounded-xl border-0"
-                            allowfullscreen 
-                            scrolling="no"
-                            allow="encrypted-media;">
-                        </iframe>
-                    `;
-                    gallery.appendChild(card);
-                });
-
-            } catch (error) {
-                console.error("Error:", error);
-                loading.innerText = "Please wait a moment. The first batch of videos is being fetched on GitHub...";
+                loading.innerText = "System is updating. The videos will appear here shortly.";
             }
         }
 
