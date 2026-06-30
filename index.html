@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premium TikTok Stream</title>
+    <title>TikTok Style Stream</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
-            background-color: #050505; 
+            background-color: #000000; /* Dark background like TikTok */
             color: #ffffff;
-            overflow: hidden; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* We handle scrolling inside the feed container */
         }
         
-        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        /* Hide scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
 
+        /* Snap Scrolling Magic */
         .snap-container {
             height: 100vh;
             overflow-y: scroll;
@@ -33,9 +37,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
         }
 
+        /* Loader Animation */
         .loader {
             border: 4px solid rgba(255, 255, 255, 0.1);
             border-left-color: #ec4899;
@@ -50,57 +54,54 @@
 <body>
 
     <div id="video-feed" class="snap-container">
-        <div id="initial-loader" class="h-screen flex flex-col justify-center items-center text-gray-400 z-50">
+        <div id="initial-loader" class="h-screen flex flex-col justify-center items-center text-gray-400">
             <div class="loader mb-4"></div>
-            <p class="animate-pulse">Mixing fresh videos for you...</p>
+            <p class="animate-pulse">Connecting to TikTok servers...</p>
         </div>
     </div>
 
     <script>
-        // අනිවාර්යයෙන්ම ඔයාගේ Google Script Link එක මෙතනට දාන්න
+        // ඔයාගේ Google Script Link එක
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec";
         
-        const TAGS = ["dasuni_seneethma" ,"kaveegamage", "dasuni_senethma_kukku", "srilanka_actress", "srilanka_niliyo_kukku", "shaudri_kukku", "srilanka_kukku", "praveena_disanayaka", "shanudri"];
-        
-        // වීඩියෝ ගබඩා කරන Pool එක සහ පාලක විචල්‍යයන්
-        let videoPool = [];
-        let isFetching = false;
-        let isRendering = false;
-        
-        // මුළු සයිට් එකටම අදාල Mute State එක
-        let isGlobalMuted = true;
+        const TAGS = ["nethmiroshel_kukku","piumi_edirisingha_hor","duneesha_piumi","srilanka_niliyo_hot","suhandi_wosadi_hot" ,"srilanka_hot_kello","srilankahotkukku",, "srilanka_kukku", "srilanka_niliyo", "praveena_disanayaka", "shaudri"];
+        let currentTagIndex = 0;
+        let isLoading = false;
         
         const feedContainer = document.getElementById('video-feed');
 
-        // වීඩියෝ ප්ලේ වීම පාලනය කරන Observer එක
-        const observerOptions = { root: feedContainer, threshold: 0.6 };
+        // ලැග් වීම වළක්වන සුපිරි තාක්ෂණය (Intersection Observer)
+        // මේකෙන් කරන්නේ තිරයේ පේන්න තියෙන වීඩියෝ එක විතරක් Play කරලා අනිත්වා Pause කරන එකයි
+        const observerOptions = {
+            root: feedContainer,
+            threshold: 0.6 // වීඩියෝ එකෙන් 60%ක් තිරයට ආවම Play වෙනවා
+        };
+
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const videoElement = entry.target.querySelector('video');
                 if (!videoElement) return;
 
                 if (entry.isIntersecting) {
-                    // වීඩියෝ එක තිරයට එද්දී ඒ මොහොතේ තියෙන Global Mute තත්ත්වය අදාළ කිරීම
-                    videoElement.muted = isGlobalMuted;
+                    // වීඩියෝ එක තිරයට ආවම Play කරනවා
                     videoElement.play().catch(e => console.log("Autoplay paused by browser."));
                 } else {
+                    // වීඩියෝ එක තිරයෙන් ගියාම Pause කරනවා (RAM එක ඉතුරු වෙන්න)
                     videoElement.pause();
                     videoElement.currentTime = 0; 
                 }
             });
         }, observerOptions);
 
-        // API එකෙන් වීඩියෝ ගෙනැවිත් Pool එකට දමා කවලම් කිරීම
-        async function fetchVideosToPool() {
-            if (isFetching) return;
-            isFetching = true;
+        async function fetchVideos() {
+            if (isLoading) return;
+            isLoading = true;
 
-            // අහඹු ලෙස Tag එකක් තෝරාගැනීම
-            const randomTag = TAGS[Math.floor(Math.random() * TAGS.length)];
-            const cacheBuster = Math.floor(Math.random() * 10000);
+            const tag = TAGS[currentTagIndex];
+            currentTagIndex = (currentTagIndex + 1) % TAGS.length; // Rotate tags
 
             try {
-                const response = await fetch(`${MY_API_URL}?tag=${randomTag}&cb=${cacheBuster}`);
+                const response = await fetch(`${MY_API_URL}?tag=${tag}`);
                 if (response.ok) {
                     const json = await response.json();
                     let rawVideos = [];
@@ -117,113 +118,87 @@
                     })).filter(v => v.playUrl);
 
                     if (fetchedBatch.length > 0) {
-                        // අලුත් වීඩියෝ ටික Pool එකට දාලා, මුළු Pool එකම හොඳට කවලම් කරනවා (Mix all tags)
-                        videoPool.push(...fetchedBatch);
-                        videoPool.sort(() => Math.random() - 0.5);
+                        // පළමු පාර Load වෙද්දි Loading Screen එක අයින් කරනවා
+                        const initialLoader = document.getElementById('initial-loader');
+                        if (initialLoader) initialLoader.remove();
+
+                        renderVideos(fetchedBatch);
                     }
                 }
             } catch (e) {
                 console.error("Failed to fetch videos:", e);
             }
 
-            isFetching = false;
-
-            // මේක පළවෙනි පාර Load වීම නම්, Loader එක අයින් කරලා වීඩියෝ පෙන්වනවා
-            const initialLoader = document.getElementById('initial-loader');
-            if (initialLoader) {
-                initialLoader.remove();
-                renderBatchFromPool();
-                // තව Tag එකක් යටිං Load වෙන්න දානවා Mix එක තවත් වැඩි වෙන්න
-                setTimeout(fetchVideosToPool, 1000); 
-            }
+            isLoading = false;
         }
 
-        // Pool එකෙන් වීඩියෝ කිහිපයක් ගෙන තිරයට දැමීම (Render)
-        function renderBatchFromPool() {
-            if (videoPool.length === 0) return;
-            
-            // එකවරකට වීඩියෝ 5ක් තිරයට යැවීම
-            const batch = videoPool.splice(0, 5);
-
-            batch.forEach(videoData => {
+        function renderVideos(videos) {
+            videos.forEach(videoData => {
                 const section = document.createElement('div');
                 section.className = "snap-section";
                 
-                // දැනට Unmute කරලා නම් Hint එක අයින් කරලම යවන්න
-                const hintOpacity = isGlobalMuted ? 'opacity-100' : 'opacity-0 pointer-events-none';
-
+                // PC එකේදී ලස්සනට මැදින් පේන්නත්, Phone එකේ Full Screen පේන්නත් හදපු Layout එක
                 section.innerHTML = `
-                    <img src="${videoData.cover}" class="absolute inset-0 w-full h-full object-cover blur-[60px] opacity-40 z-0 pointer-events-none" alt="blur-bg">
-                    
-                    <div class="relative z-10 w-full h-full md:w-[420px] md:h-[92%] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center shadow-2xl border-0 md:border md:border-gray-800/60">
+                    <div class="relative w-full h-full md:w-[400px] md:h-[90%] md:rounded-2xl md:border-2 md:border-gray-800 bg-black overflow-hidden flex justify-center items-center shadow-2xl">
                         
                         <video 
                             class="w-full h-full object-cover cursor-pointer"
                             loop 
                             playsinline 
-                            ${isGlobalMuted ? 'muted' : ''} 
+                            muted 
                             preload="metadata"
                             poster="${videoData.cover}">
                             <source src="${videoData.playUrl}" type="video/mp4">
                         </video>
 
-                        <div class="absolute bottom-6 left-4 right-4 text-left z-20 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] pointer-events-none">
-                            <h3 class="text-white font-extrabold text-[18px] mb-1">@${videoData.author}</h3>
-                            <p class="text-gray-100 text-[14px] font-medium leading-snug line-clamp-2">${videoData.title}</p>
+                        <div class="absolute bottom-4 left-4 right-16 text-left z-10 drop-shadow-lg">
+                            <h3 class="text-white font-bold text-[17px] mb-1 hover:underline">@${videoData.author}</h3>
+                            <p class="text-white text-[14px] font-light leading-snug line-clamp-2">${videoData.title}</p>
                         </div>
 
-                        <div class="unmute-hint absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-5 py-3 rounded-full pointer-events-none text-sm transition-opacity duration-300 backdrop-blur-md font-bold tracking-wide z-30 ${hintOpacity}">
+                        <div class="absolute bottom-8 right-2 flex flex-col items-center space-y-4 z-10 drop-shadow-lg">
+                            <div class="bg-gray-800/50 p-3 rounded-full backdrop-blur-sm cursor-pointer hover:bg-pink-500 transition">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            </div>
+                            <div class="bg-gray-800/50 p-3 rounded-full backdrop-blur-sm cursor-pointer">
+                                <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+                            </div>
+                        </div>
+
+                        <div class="unmute-hint absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/60 text-white px-4 py-2 rounded-full pointer-events-none opacity-80 text-sm transition-opacity duration-300">
                             Tap to Unmute
                         </div>
                     </div>
                 `;
 
                 const videoElement = section.querySelector('video');
-                
-                // වීඩියෝ එක Click කල විට Mute/Unmute කිරීම (සියලුම වීඩියෝ සඳහා)
-                videoElement.addEventListener('click', () => {
-                    isGlobalMuted = !isGlobalMuted; // Global State එක මාරු කිරීම
-                    
-                    // සයිට් එකේ තියෙන ඔක්කොම වීඩියෝ වලට මේක අදාළ කිරීම
-                    document.querySelectorAll('video').forEach(vid => {
-                        vid.muted = isGlobalMuted;
-                    });
+                const unmuteHint = section.querySelector('.unmute-hint');
 
-                    // සද්දෙ දැම්මට පස්සේ හැම Hint එකක්ම සදහටම අයින් කිරීම
-                    document.querySelectorAll('.unmute-hint').forEach(hint => {
-                        hint.classList.remove('opacity-100');
-                        hint.classList.add('opacity-0', 'pointer-events-none');
-                    });
+                // වීඩියෝ එක Click කරාම Mute/Unmute කිරීම සහ Play/Pause කිරීම
+                videoElement.addEventListener('click', () => {
+                    videoElement.muted = !videoElement.muted;
+                    if (unmuteHint) unmuteHint.style.opacity = '0'; // Hint එක අයින් කරනවා
                 });
 
                 feedContainer.appendChild(section);
-                videoObserver.observe(section); // Lag එක නවත්වන්න Observer එකට දැමීම
+                
+                // වීඩියෝ එක Observer එකට දානවා (Lag වෙන එක නවත්තන්න)
+                videoObserver.observe(section);
             });
         }
 
-        // පල්ලෙහාට Scroll කරන විට ස්වයංක්‍රීයව ලෝඩ් වීම
+        // Infinite Scroll - පල්ලෙහාට යද්දී අලුත් වීඩියෝ ලෝඩ් කිරීම
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
-            
-            // තිර 3ක් තරම් දුරට පල්ලෙහාට එද්දි ඊළඟ සෙට් එක Render කරනවා
-            if (scrollTop + clientHeight >= scrollHeight - (clientHeight * 3)) {
-                
-                if (!isRendering && videoPool.length > 0) {
-                    isRendering = true;
-                    renderBatchFromPool();
-                    setTimeout(() => isRendering = false, 100); 
-                }
-                
-                // Pool එකේ වීඩියෝ 10ට අඩුවෙන් තියෙනවා නම් තව අලුත් Tag එකක් හොයන් එනවා
-                if (videoPool.length < 10 && !isFetching) {
-                    fetchVideosToPool();
-                }
+            // අන්තිම වීඩියෝ 2ක් විතර තියෙද්දි ඊළඟ ටික ඉල්ලනවා (Smooth loading)
+            if (scrollTop + clientHeight >= scrollHeight - (clientHeight * 2)) {
+                fetchVideos();
             }
         });
 
-        // සයිට් එක Load වෙද්දි පළවෙනි වීඩියෝ තොගය ගෙන්වා ගැනීම
+        // මුලින්ම ලෝඩ් වෙද්දි වීඩියෝ ටික අරන් එනවා
         window.onload = () => {
-            fetchVideosToPool();
+            fetchVideos();
         };
 
     </script>
