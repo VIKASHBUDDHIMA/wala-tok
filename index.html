@@ -10,17 +10,13 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            background-color: #050505; /* Deep black */
+            background-color: #050505; 
             color: #ffffff;
             overflow: hidden; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        /* Hide scrollbar */
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
 
         .snap-container {
             height: 100vh;
@@ -40,7 +36,6 @@
             overflow: hidden;
         }
 
-        /* Loading Spinner */
         .loader {
             border: 4px solid rgba(255, 255, 255, 0.1);
             border-left-color: #ec4899;
@@ -57,41 +52,37 @@
     <div id="video-feed" class="snap-container">
         <div id="initial-loader" class="h-screen flex flex-col justify-center items-center text-gray-400 z-50">
             <div class="loader mb-4"></div>
-            <p class="animate-pulse">Discovering fresh videos...</p>
+            <p class="animate-pulse">Mixing fresh videos for you...</p>
         </div>
     </div>
 
     <script>
-        // ඔයාගේ Google Script Link එක මෙතනට දාන්න
+        // අනිවාර්යයෙන්ම ඔයාගේ Google Script Link එක මෙතනට දාන්න
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec";
         
-        // වැඩිපුර Tags දැම්මා අලුත් වීඩියෝ එන්න
-        let TAGS = ["dasuni_seneethma" ,"kaveegamage", "dasuni_senethma_kukku", "srilanka_actress", "srilanka_niliyo_kukku", "shaudri_kukku", "srilanka_kukku", "praveena_disanayaka", "shanudri"];
-        // Tags ටික Load වෙද්දිම අහඹු ලෙස කලවම් කිරීම (Refresh කරද්දි වෙනස් වෙන්න)
-        TAGS = TAGS.sort(() => Math.random() - 0.5); 
+        const TAGS = ["dasuni_seneethma" ,"kaveegamage", "dasuni_senethma_kukku", "srilanka_actress", "srilanka_niliyo_kukku", "shaudri_kukku", "srilanka_kukku", "praveena_disanayaka", "shanudri"];
         
-        let currentTagIndex = 0;
-        let isLoading = false;
+        // වීඩියෝ ගබඩා කරන Pool එක සහ පාලක විචල්‍යයන්
+        let videoPool = [];
+        let isFetching = false;
+        let isRendering = false;
         
-        // Global Mute State (මුලින්ම Mute වෙලා තියෙන්නේ, එක පාරක් Click කරාම මේක False වෙනවා)
+        // මුළු සයිට් එකටම අදාල Mute State එක
         let isGlobalMuted = true;
         
         const feedContainer = document.getElementById('video-feed');
 
-        const observerOptions = {
-            root: feedContainer,
-            threshold: 0.6
-        };
-
+        // වීඩියෝ ප්ලේ වීම පාලනය කරන Observer එක
+        const observerOptions = { root: feedContainer, threshold: 0.6 };
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const videoElement = entry.target.querySelector('video');
                 if (!videoElement) return;
 
                 if (entry.isIntersecting) {
-                    // වීඩියෝ එක තිරයට එනකොට, Global Mute එකට අනුව සද්දේ හදනවා
+                    // වීඩියෝ එක තිරයට එද්දී ඒ මොහොතේ තියෙන Global Mute තත්ත්වය අදාළ කිරීම
                     videoElement.muted = isGlobalMuted;
-                    videoElement.play().catch(e => console.log("Autoplay paused. Waiting for user interaction."));
+                    videoElement.play().catch(e => console.log("Autoplay paused by browser."));
                 } else {
                     videoElement.pause();
                     videoElement.currentTime = 0; 
@@ -99,18 +90,17 @@
             });
         }, observerOptions);
 
-        async function fetchVideos() {
-            if (isLoading) return;
-            isLoading = true;
+        // API එකෙන් වීඩියෝ ගෙනැවිත් Pool එකට දමා කවලම් කිරීම
+        async function fetchVideosToPool() {
+            if (isFetching) return;
+            isFetching = true;
 
-            const tag = TAGS[currentTagIndex];
-            currentTagIndex = (currentTagIndex + 1) % TAGS.length; 
-
-            // API request එකට random අගයක් යවනවා cache එක මඟ හරින්න
+            // අහඹු ලෙස Tag එකක් තෝරාගැනීම
+            const randomTag = TAGS[Math.floor(Math.random() * TAGS.length)];
             const cacheBuster = Math.floor(Math.random() * 10000);
 
             try {
-                const response = await fetch(`${MY_API_URL}?tag=${tag}&cb=${cacheBuster}`);
+                const response = await fetch(`${MY_API_URL}?tag=${randomTag}&cb=${cacheBuster}`);
                 if (response.ok) {
                     const json = await response.json();
                     let rawVideos = [];
@@ -127,27 +117,41 @@
                     })).filter(v => v.playUrl);
 
                     if (fetchedBatch.length > 0) {
-                        // වීඩියෝ ටික තවත් කලවම් කරනවා
-                        fetchedBatch.sort(() => Math.random() - 0.5);
-
-                        const initialLoader = document.getElementById('initial-loader');
-                        if (initialLoader) initialLoader.remove();
-
-                        renderVideos(fetchedBatch);
+                        // අලුත් වීඩියෝ ටික Pool එකට දාලා, මුළු Pool එකම හොඳට කවලම් කරනවා (Mix all tags)
+                        videoPool.push(...fetchedBatch);
+                        videoPool.sort(() => Math.random() - 0.5);
                     }
                 }
             } catch (e) {
                 console.error("Failed to fetch videos:", e);
             }
 
-            isLoading = false;
+            isFetching = false;
+
+            // මේක පළවෙනි පාර Load වීම නම්, Loader එක අයින් කරලා වීඩියෝ පෙන්වනවා
+            const initialLoader = document.getElementById('initial-loader');
+            if (initialLoader) {
+                initialLoader.remove();
+                renderBatchFromPool();
+                // තව Tag එකක් යටිං Load වෙන්න දානවා Mix එක තවත් වැඩි වෙන්න
+                setTimeout(fetchVideosToPool, 1000); 
+            }
         }
 
-        function renderVideos(videos) {
-            videos.forEach(videoData => {
+        // Pool එකෙන් වීඩියෝ කිහිපයක් ගෙන තිරයට දැමීම (Render)
+        function renderBatchFromPool() {
+            if (videoPool.length === 0) return;
+            
+            // එකවරකට වීඩියෝ 5ක් තිරයට යැවීම
+            const batch = videoPool.splice(0, 5);
+
+            batch.forEach(videoData => {
                 const section = document.createElement('div');
                 section.className = "snap-section";
                 
+                // දැනට Unmute කරලා නම් Hint එක අයින් කරලම යවන්න
+                const hintOpacity = isGlobalMuted ? 'opacity-100' : 'opacity-0 pointer-events-none';
+
                 section.innerHTML = `
                     <img src="${videoData.cover}" class="absolute inset-0 w-full h-full object-cover blur-[60px] opacity-40 z-0 pointer-events-none" alt="blur-bg">
                     
@@ -157,7 +161,7 @@
                             class="w-full h-full object-cover cursor-pointer"
                             loop 
                             playsinline 
-                            muted 
+                            ${isGlobalMuted ? 'muted' : ''} 
                             preload="metadata"
                             poster="${videoData.cover}">
                             <source src="${videoData.playUrl}" type="video/mp4">
@@ -168,7 +172,7 @@
                             <p class="text-gray-100 text-[14px] font-medium leading-snug line-clamp-2">${videoData.title}</p>
                         </div>
 
-                        <div class="unmute-hint absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-5 py-3 rounded-full pointer-events-none text-sm transition-opacity duration-300 backdrop-blur-md font-bold tracking-wide z-30">
+                        <div class="unmute-hint absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-5 py-3 rounded-full pointer-events-none text-sm transition-opacity duration-300 backdrop-blur-md font-bold tracking-wide z-30 ${hintOpacity}">
                             Tap to Unmute
                         </div>
                     </div>
@@ -176,37 +180,50 @@
 
                 const videoElement = section.querySelector('video');
                 
-                // වීඩියෝ එක Click කල විට Mute/Unmute කිරීම
+                // වීඩියෝ එක Click කල විට Mute/Unmute කිරීම (සියලුම වීඩියෝ සඳහා)
                 videoElement.addEventListener('click', () => {
-                    // Global state එක වෙනස් කරනවා
-                    isGlobalMuted = !isGlobalMuted;
+                    isGlobalMuted = !isGlobalMuted; // Global State එක මාරු කිරීම
                     
-                    // දැනට ලෝඩ් වෙලා තියෙන *හැම* වීඩියෝ එකටම ඒක අදාළ කරනවා
+                    // සයිට් එකේ තියෙන ඔක්කොම වීඩියෝ වලට මේක අදාළ කිරීම
                     document.querySelectorAll('video').forEach(vid => {
                         vid.muted = isGlobalMuted;
                     });
 
-                    // සද්දෙ දැම්මට පස්සේ හැම වීඩියෝ එකේම "Tap to Unmute" වචනෙ අයින් කරලා දානවා
+                    // සද්දෙ දැම්මට පස්සේ හැම Hint එකක්ම සදහටම අයින් කිරීම
                     document.querySelectorAll('.unmute-hint').forEach(hint => {
-                        hint.style.opacity = '0';
+                        hint.classList.remove('opacity-100');
+                        hint.classList.add('opacity-0', 'pointer-events-none');
                     });
                 });
 
                 feedContainer.appendChild(section);
-                videoObserver.observe(section);
+                videoObserver.observe(section); // Lag එක නවත්වන්න Observer එකට දැමීම
             });
         }
 
-        // Infinite Scroll
+        // පල්ලෙහාට Scroll කරන විට ස්වයංක්‍රීයව ලෝඩ් වීම
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
-            if (scrollTop + clientHeight >= scrollHeight - (clientHeight * 2)) {
-                fetchVideos();
+            
+            // තිර 3ක් තරම් දුරට පල්ලෙහාට එද්දි ඊළඟ සෙට් එක Render කරනවා
+            if (scrollTop + clientHeight >= scrollHeight - (clientHeight * 3)) {
+                
+                if (!isRendering && videoPool.length > 0) {
+                    isRendering = true;
+                    renderBatchFromPool();
+                    setTimeout(() => isRendering = false, 100); 
+                }
+                
+                // Pool එකේ වීඩියෝ 10ට අඩුවෙන් තියෙනවා නම් තව අලුත් Tag එකක් හොයන් එනවා
+                if (videoPool.length < 10 && !isFetching) {
+                    fetchVideosToPool();
+                }
             }
         });
 
+        // සයිට් එක Load වෙද්දි පළවෙනි වීඩියෝ තොගය ගෙන්වා ගැනීම
         window.onload = () => {
-            fetchVideos();
+            fetchVideosToPool();
         };
 
     </script>
