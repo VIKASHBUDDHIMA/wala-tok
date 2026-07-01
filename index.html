@@ -38,7 +38,7 @@
             background-color: #000000;
         }
 
-        /* Loading Bar (Bottom) - හිඩැසක් එක්ක එන එක */
+        /* Loading Bar (Bottom) */
         .bottom-loader-section {
             height: 12vh;
             width: 100%;
@@ -94,13 +94,12 @@
     </div>
 
     <script>
-        // ඔයාගේ Apps Script (Web App) ලින්ක් එක මෙතන දාන්න!
+        // මෙතන අනිවාර්යයෙන්ම ඔයාගේ Apps Script (Web App) URL එක දාන්න!
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
-        let videoPool = []; // වීඩියෝ කලවම් කරන්න හදපු අලුත් Pool එක
+        let videoPool = []; 
         
-        // LocalStorage එකෙන් පරණ බලපු වීඩියෝ ID ටික ගන්නවා
         let seenVideoIds = [];
         try {
             seenVideoIds = JSON.parse(localStorage.getItem('hotTokSeenVideos')) || [];
@@ -117,18 +116,16 @@
         const bottomLoader = document.getElementById('bottom-loader');
         const loadingText = document.getElementById('loading-text');
 
-        // වීඩියෝ එකක් බැලුවට පස්සේ ඒක සේව් කරන Function එක (උපරිම 500ක් තියාගන්නවා)
         function markVideoAsSeen(id) {
             if (!seenVideoIds.includes(id)) {
                 seenVideoIds.push(id);
                 if (seenVideoIds.length > 500) {
-                    seenVideoIds.shift(); // පරණම එක අයින් කරනවා
+                    seenVideoIds.shift(); 
                 }
                 localStorage.setItem('hotTokSeenVideos', JSON.stringify(seenVideoIds));
             }
         }
 
-        // Tab මාරු කරද්දි / වෙන ඇප් එකකට යද්දි වීඩියෝ එක Push(Pause) වෙන එක
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
                 if (currentVisibleVideo && !currentVisibleVideo.paused) {
@@ -154,7 +151,6 @@
                     currentVisibleVideo = videoElement;
                     videoElement.muted = isGlobalMuted;
                     
-                    // Promise එක හරියට Handle කරලා හිර වෙන එක නතර කරනවා
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
@@ -188,18 +184,20 @@
             }
         }
 
-        // වීඩියෝ Pool එකට අලුත් වීඩියෝ ගෙනල්ලා කලවම් කරන Function එක
         async function fetchVideosToPool() {
-            if (isFetching || TAGS.length === 0) return;
+            if (isFetching || TAGS.length === 0) return false;
             isFetching = true;
 
-            // Random විදිහට ටැග් එකක් තෝරනවා
-            const randomTag = TAGS[Math.floor(Math.random() * TAGS.length)];
-            
-            try {
-                const response = await fetch(`${MY_API_URL}?action=get_videos&tag=${randomTag}`);
+            let attempts = 0;
+            let found = false;
+
+            while (attempts < 3 && !found) {
+                const randomTag = TAGS[Math.floor(Math.random() * TAGS.length)];
                 
-                if (response.ok) {
+                try {
+                    const response = await fetch(`${MY_API_URL}?action=get_videos&tag=${randomTag}`);
+                    if (!response.ok) throw new Error("Network issue");
+                    
                     const json = await response.json();
                     let rawVideos = [];
 
@@ -220,34 +218,36 @@
 
                     if (validVideos.length > 0) {
                         videoPool.push(...validVideos);
-                        // අරන් ආපු වීඩියෝ ඔක්කොම හොඳට කලවම් (Shuffle) කරනවා
                         videoPool.sort(() => Math.random() - 0.5); 
+                        found = true;
                     }
+                } catch (e) {
+                    console.error("Fetch failed for tag:", randomTag, e);
                 }
-            } catch (e) {
-                console.error("Fetch failed:", e);
+                attempts++;
             }
             
             isFetching = false;
+            return found;
         }
 
         async function fetchAndRenderOneVideo() {
-            // Pool එකේ වීඩියෝ නැත්නම් එනකන් ඉන්නවා
             if (videoPool.length === 0) {
-                await fetchVideosToPool();
+                const success = await fetchVideosToPool();
+                if (!success) return false; // වීඩියෝ ගේන්න බැරි උනොත් False දෙනවා
             }
             
-            // Pool එකේ වීඩියෝ තියෙනවා නම් එකක් අරන් පෙන්නනවා
             if (videoPool.length > 0) {
                 const videoData = videoPool.shift(); 
                 markVideoAsSeen(videoData.id);
                 renderVideoToDOM(videoData);
             }
 
-            // Pool එකේ වීඩියෝ 3කට වඩා අඩු නම්, Background එකේ තව වීඩියෝ ගේන්න දානවා (හිර වෙන්නේ නැති වෙන්න)
             if (videoPool.length < 3 && !isFetching) {
                 fetchVideosToPool();
             }
+            
+            return true;
         }
 
         function renderVideoToDOM(videoData) {
@@ -298,7 +298,6 @@
             const playBtnOverlay = section.querySelector('.play-btn-overlay');
             const muteBtn = section.querySelector('.mute-btn');
             
-            // වීඩියෝ එක Click කරාම Play/Pause වෙන එක
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
                     const playPromise = videoElement.play();
@@ -320,7 +319,6 @@
                 }
             });
 
-            // Mute Button එක Click කරාම
             muteBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 isGlobalMuted = !isGlobalMuted; 
@@ -347,13 +345,40 @@
         });
 
         async function startStream() {
+            // URL එක දාලද කියලා Check කරනවා
+            if (MY_API_URL === "YOUR_APPS_SCRIPT_URL_HERE" || MY_API_URL.trim() === "") {
+                loadingText.innerText = "Error: කරුණාකර Apps Script ලින්ක් එක MY_API_URL එකට දාන්න!";
+                loadingText.style.color = "#ff0050";
+                document.querySelector('.tiktok-loader').style.display = 'none';
+                return;
+            }
+
             loadingText.innerText = "Loading Config...";
             await fetchTagsFromSheet(); 
             
             loadingText.innerText = "Starting stream...";
-            await fetchAndRenderOneVideo(); 
-            await fetchAndRenderOneVideo();
-            await fetchAndRenderOneVideo();
+            
+            let rendered = await fetchAndRenderOneVideo(); 
+            
+            // වීඩියෝ එක ආවේ නැත්නම් History එක මකලා ආයෙ Try කරනවා
+            if (!rendered) {
+                loadingText.innerText = "Retrying... (Clearing old cache)";
+                seenVideoIds = [];
+                localStorage.removeItem('hotTokSeenVideos');
+                
+                rendered = await fetchAndRenderOneVideo();
+                
+                // ආයෙත් ආවේ නැත්නම් Error එකක් පෙන්නනවා
+                if(!rendered) {
+                    loadingText.innerText = "Error: වීඩියෝ ලෝඩ් කරගන්න බැරි වුණා. Script URL එක හරිද බලන්න.";
+                    loadingText.style.color = "#ff0050";
+                    document.querySelector('.tiktok-loader').style.display = 'none';
+                    return;
+                }
+            }
+            
+            fetchAndRenderOneVideo();
+            fetchAndRenderOneVideo();
         }
 
         window.onload = startStream;
