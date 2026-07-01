@@ -9,7 +9,7 @@
         body, html {
             margin: 0;
             padding: 0;
-            background-color: #000000; /* Pure Black Background */
+            background-color: #000000;
             color: #ffffff;
             overflow: hidden; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -38,7 +38,6 @@
             background-color: #000000;
         }
 
-        /* TikTok Style Loaders */
         .tiktok-loader {
             border: 3px solid rgba(255, 255, 255, 0.1);
             border-left-color: #ff0050; 
@@ -74,16 +73,15 @@
     </div>
 
     <script>
-        // අනිවාර්යයෙන්ම ඔයාගේ Google Script Link එක මෙතනට දාන්න
+        // ඔයාගේ API ලින්ක් එක
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec";
         
-        const TAGS = ["nethmiroshel_kukku","piumi_edirisingha_hor","duneesha_piumi","srilanka_niliyo_hot","suhandi_wosadi_hot" ,"srilanka_hot_kello","srilankahotkukku",, "srilanka_kukku", "srilanka_niliyo", "praveena_disanayaka", "shaudri"];
+        const TAGS = ["srilanka", "sinhala", "colombo", "trending", "dance", "foryou", "viral", "comedy", "funny"];
         
-        // එක හැෂ් ටැග් එකකින් ගෙනාපු ඉතුරු වීඩියෝ තියාගන්න Cache එකක් (ඊළඟ පාර ක්ෂණිකව දෙන්න)
         const tagCache = {};
         TAGS.forEach(t => tagCache[t] = []);
 
-        let currentTagIndex = Math.floor(Math.random() * TAGS.length); // අහඹු ටැග් එකකින් පටන් ගනී
+        let currentTagIndex = Math.floor(Math.random() * TAGS.length); 
         let seenVideoIds = new Set(); 
         let isFetching = false;
         let isGlobalMuted = true;
@@ -92,7 +90,6 @@
         const endLoader = document.getElementById('end-loader');
         const initialLoader = document.getElementById('initial-loader');
 
-        // වීඩියෝ Play / Pause වීම පාලනය
         const observerOptions = { root: feedContainer, threshold: 0.6 };
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -109,24 +106,25 @@
             });
         }, observerOptions);
 
-        // මේ Function එකෙන් කරන්නේ එක වීඩියෝ එකක් හරියටම අරන් සයිට් එකට දාන එක
         async function fetchAndRenderOneVideo() {
             if (isFetching) return false;
 
             let attempts = 0;
-            // අපි එකින් එක ටැග් මාරු කර කර වීඩියෝ එකක් හොයනවා
             while (attempts < TAGS.length) {
                 const tag = TAGS[currentTagIndex];
-                currentTagIndex = (currentTagIndex + 1) % TAGS.length; // ඊළඟ ටැග් එකට මාරු වීම (Round-Robin)
+                currentTagIndex = (currentTagIndex + 1) % TAGS.length; 
 
-                // 1. කලින් ගෙනාපු ඒවා Cache එකේ තියෙනවද බලනවා (ක්ෂණිකව Load වෙන්න)
+                // BUG FIX: Ensure tagCache array exists before checking length to prevent undefined error
+                if (!tagCache[tag]) {
+                    tagCache[tag] = [];
+                }
+
                 if (tagCache[tag].length > 0) {
                     const videoData = tagCache[tag].shift();
                     renderVideoToDOM(videoData);
                     return true; 
                 }
 
-                // 2. Cache එක හිස් නම් විතරක් අලුතින් ඒ ටැග් එකෙන් Fetch කරනවා
                 isFetching = true;
                 try {
                     const cacheBuster = Math.floor(Math.random() * 10000);
@@ -139,7 +137,6 @@
                         if (json.data && Array.isArray(json.data)) rawVideos = json.data;
                         else if (json.data && Array.isArray(json.data.videos)) rawVideos = json.data.videos;
 
-                        // කලින් බලපු නැති වීඩියෝ ටික වෙන් කරගන්නවා
                         let validVideos = rawVideos.filter(v => {
                             const id = v.id || v.video_id;
                             const play = v.play || v.wmplay;
@@ -153,17 +150,15 @@
                         }));
 
                         if (validVideos.length > 0) {
-                            validVideos.forEach(v => seenVideoIds.add(v.id)); // ඔක්කොම Seen වලට දානවා
+                            validVideos.forEach(v => seenVideoIds.add(v.id)); 
                             
-                            // ඒකෙන් පළවෙනි එක අරන් ක්ෂණිකව සයිට් එකට දානවා
                             const firstVideo = validVideos.shift();
                             renderVideoToDOM(firstVideo);
 
-                            // ඉතුරු ටික Cache එකේ හංගනවා ඊළඟ පාර මේ ටැග් එකට වාරේ එද්දි ක්ෂණිකව දෙන්න
                             tagCache[tag] = validVideos;
                             
                             isFetching = false;
-                            return true; // වීඩියෝ එකක් හම්බුණා, ඉතින් Loop එක නවත්තනවා
+                            return true; 
                         }
                     }
                 } catch (e) {
@@ -171,17 +166,15 @@
                 }
                 
                 isFetching = false;
-                attempts++; // වීඩියෝ එකක් හම්බුනේ නැත්තන් ඊළඟ ටැග් එකට යනවා
+                attempts++; 
             }
             return false;
         }
 
-        // වීඩියෝ එක HTML එකට ඇතුලත් කිරීම
         function renderVideoToDOM(videoData) {
-            // පළමු වීඩියෝ එක ආපු ගමන් Initial Loader එක අයින් කරනවා
             if (initialLoader && initialLoader.style.display !== 'none') {
                 initialLoader.style.display = 'none';
-                endLoader.style.display = 'flex'; // End loader එක on කරනවා
+                endLoader.style.display = 'flex'; 
             }
 
             const section = document.createElement('div');
@@ -215,7 +208,6 @@
 
             const videoElement = section.querySelector('video');
             
-            // Unmute / Mute Logic (එකක් එබුවම ඔක්කොම වෙනස් වෙනවා)
             videoElement.addEventListener('click', () => {
                 isGlobalMuted = !isGlobalMuted;
                 document.querySelectorAll('video').forEach(vid => vid.muted = isGlobalMuted);
@@ -225,27 +217,20 @@
                 });
             });
 
-            // අලුත් වීඩියෝ එක අන්තිම Loading Spinner එකට උඩින් දානවා
             feedContainer.insertBefore(section, endLoader);
             videoObserver.observe(section); 
         }
 
-        // Scroll කරද්දි අලුත් ඒවා Load කිරීම
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
             
-            // අපි අන්තිම වීඩියෝ එක කිට්ටුවට එද්දි ඊළඟ එක ගේන්න පටන් ගන්නවා
             if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
                 fetchAndRenderOneVideo();
             }
         });
 
-        // සයිට් එක Load වෙද්දි පළවෙනි වීඩියෝ ටික (එකින් එක) ගෙන ඒම
         async function startStream() {
-            // පළවෙනි වීඩියෝ එක ගේනවා (මේක ආවම තමයි සයිට් එක පේන්න ගන්නේ)
             await fetchAndRenderOneVideo(); 
-            
-            // ඔයා පළවෙනි එක බලන අතරේ, යටිං තව වීඩියෝ 2ක් ලෑස්ති කරලා තියනවා Lag වෙන්නේ නැති වෙන්න
             await fetchAndRenderOneVideo();
             await fetchAndRenderOneVideo();
         }
