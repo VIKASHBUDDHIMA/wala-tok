@@ -38,7 +38,6 @@
             background-color: #000000;
         }
 
-        /* Loading Bar (Bottom) */
         .bottom-loader-section {
             height: 12vh;
             width: 100%;
@@ -61,7 +60,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Play Button Pop Animation */
         .play-btn-overlay {
             transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
@@ -82,7 +80,7 @@
     <div id="video-feed" class="snap-container">
         
         <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
-            <div class="tiktok-loader mb-4" style="width:40px; height:40px;"></div>
+            <div class="tiktok-loader mb-4" id="main-spinner" style="width:40px; height:40px;"></div>
             <p class="text-gray-400 text-sm font-medium animate-pulse" id="loading-text">Connecting...</p>
         </div>
 
@@ -94,7 +92,7 @@
     </div>
 
     <script>
-        // මෙතන අනිවාර්යයෙන්ම ඔයාගේ Apps Script (Web App) URL එක දාන්න!
+        // INSERT YOUR APPS SCRIPT URL HERE
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
@@ -115,6 +113,14 @@
         const initialLoader = document.getElementById('initial-loader');
         const bottomLoader = document.getElementById('bottom-loader');
         const loadingText = document.getElementById('loading-text');
+        const mainSpinner = document.getElementById('main-spinner');
+
+        function showError(message) {
+            loadingText.innerText = message;
+            loadingText.style.color = "#ff0050";
+            loadingText.classList.remove('animate-pulse');
+            if (mainSpinner) mainSpinner.style.display = 'none';
+        }
 
         function markVideoAsSeen(id) {
             if (!seenVideoIds.includes(id)) {
@@ -159,7 +165,7 @@
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            console.log("Autoplay waiting for user interaction");
+                            console.log("Autoplay waiting for interaction");
                             if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                         });
                     }
@@ -180,6 +186,7 @@
                     TAGS = ["srilanka", "sinhala", "trending"]; 
                 }
             } catch (e) {
+                console.warn("Tags fetch failed, using defaults.");
                 TAGS = ["srilanka", "sinhala", "trending"];
             }
         }
@@ -196,7 +203,7 @@
                 
                 try {
                     const response = await fetch(`${MY_API_URL}?action=get_videos&tag=${randomTag}`);
-                    if (!response.ok) throw new Error("Network issue");
+                    if (!response.ok) throw new Error("Network response was not ok");
                     
                     const json = await response.json();
                     let rawVideos = [];
@@ -234,7 +241,7 @@
         async function fetchAndRenderOneVideo() {
             if (videoPool.length === 0) {
                 const success = await fetchVideosToPool();
-                if (!success) return false; // වීඩියෝ ගේන්න බැරි උනොත් False දෙනවා
+                if (!success) return false; 
             }
             
             if (videoPool.length > 0) {
@@ -345,40 +352,38 @@
         });
 
         async function startStream() {
-            // URL එක දාලද කියලා Check කරනවා
             if (MY_API_URL === "YOUR_APPS_SCRIPT_URL_HERE" || MY_API_URL.trim() === "") {
-                loadingText.innerText = "Error: කරුණාකර Apps Script ලින්ක් එක MY_API_URL එකට දාන්න!";
-                loadingText.style.color = "#ff0050";
-                document.querySelector('.tiktok-loader').style.display = 'none';
+                showError("Error: API URL is missing. Please update MY_API_URL.");
                 return;
             }
 
-            loadingText.innerText = "Loading Config...";
-            await fetchTagsFromSheet(); 
-            
-            loadingText.innerText = "Starting stream...";
-            
-            let rendered = await fetchAndRenderOneVideo(); 
-            
-            // වීඩියෝ එක ආවේ නැත්නම් History එක මකලා ආයෙ Try කරනවා
-            if (!rendered) {
-                loadingText.innerText = "Retrying... (Clearing old cache)";
-                seenVideoIds = [];
-                localStorage.removeItem('hotTokSeenVideos');
+            try {
+                loadingText.innerText = "Loading Config...";
+                await fetchTagsFromSheet(); 
                 
-                rendered = await fetchAndRenderOneVideo();
+                loadingText.innerText = "Starting stream...";
                 
-                // ආයෙත් ආවේ නැත්නම් Error එකක් පෙන්නනවා
-                if(!rendered) {
-                    loadingText.innerText = "Error: වීඩියෝ ලෝඩ් කරගන්න බැරි වුණා. Script URL එක හරිද බලන්න.";
-                    loadingText.style.color = "#ff0050";
-                    document.querySelector('.tiktok-loader').style.display = 'none';
-                    return;
+                let rendered = await fetchAndRenderOneVideo(); 
+                
+                if (!rendered) {
+                    loadingText.innerText = "Retrying... (Clearing cache)";
+                    seenVideoIds = [];
+                    localStorage.removeItem('hotTokSeenVideos');
+                    
+                    rendered = await fetchAndRenderOneVideo();
+                    
+                    if(!rendered) {
+                        showError("Error: Unable to fetch videos. Check API endpoint or CORS.");
+                        return;
+                    }
                 }
+                
+                fetchAndRenderOneVideo();
+                fetchAndRenderOneVideo();
+            } catch (error) {
+                console.error("Stream init error:", error);
+                showError("Critical Error: Connection failed.");
             }
-            
-            fetchAndRenderOneVideo();
-            fetchAndRenderOneVideo();
         }
 
         window.onload = startStream;
