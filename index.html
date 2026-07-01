@@ -81,18 +81,15 @@
         
         <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
             <div class="tiktok-loader mb-4" id="main-spinner" style="width:40px; height:40px;"></div>
-            <p class="text-gray-400 text-sm font-medium animate-pulse" id="loading-text">Connecting...</p>
         </div>
 
         <div id="bottom-loader" class="bottom-loader-section hidden flex-col">
             <div class="tiktok-loader mb-2"></div>
-            <p class="text-gray-500 text-xs font-medium">Loading next video...</p>
         </div>
 
     </div>
 
     <script>
-        // INSERT YOUR APPS SCRIPT URL HERE
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
@@ -112,15 +109,6 @@
         const feedContainer = document.getElementById('video-feed');
         const initialLoader = document.getElementById('initial-loader');
         const bottomLoader = document.getElementById('bottom-loader');
-        const loadingText = document.getElementById('loading-text');
-        const mainSpinner = document.getElementById('main-spinner');
-
-        function showError(message) {
-            loadingText.innerText = message;
-            loadingText.style.color = "#ff0050";
-            loadingText.classList.remove('animate-pulse');
-            if (mainSpinner) mainSpinner.style.display = 'none';
-        }
 
         function markVideoAsSeen(id) {
             if (!seenVideoIds.includes(id)) {
@@ -183,11 +171,10 @@
                 if (json.tags && Array.isArray(json.tags) && json.tags.length > 0) {
                     TAGS = json.tags;
                 } else {
-                    TAGS = ["srilanka", "sinhala", "trending"]; 
+                    TAGS = ["srilanka"]; 
                 }
             } catch (e) {
-                console.warn("Tags fetch failed, using defaults.");
-                TAGS = ["srilanka", "sinhala", "trending"];
+                TAGS = ["srilanka"];
             }
         }
 
@@ -220,7 +207,7 @@
                         playUrl: v.play || v.wmplay,
                         cover: v.cover || v.origin_cover || "",
                         title: v.title || "",
-                        author: v.author ? (v.author.nickname || "TikToker") : "TikToker"
+                        author: v.author ? (v.author.nickname || "User") : "User"
                     }));
 
                     if (validVideos.length > 0) {
@@ -229,7 +216,7 @@
                         found = true;
                     }
                 } catch (e) {
-                    console.error("Fetch failed for tag:", randomTag, e);
+                    console.error("Fetch error");
                 }
                 attempts++;
             }
@@ -353,36 +340,24 @@
 
         async function startStream() {
             if (MY_API_URL === "YOUR_APPS_SCRIPT_URL_HERE" || MY_API_URL.trim() === "") {
-                showError("Error: API URL is missing. Please update MY_API_URL.");
+                console.warn("API URL not configured.");
                 return;
             }
 
             try {
-                loadingText.innerText = "Loading Config...";
                 await fetchTagsFromSheet(); 
-                
-                loadingText.innerText = "Starting stream...";
-                
                 let rendered = await fetchAndRenderOneVideo(); 
                 
                 if (!rendered) {
-                    loadingText.innerText = "Retrying... (Clearing cache)";
                     seenVideoIds = [];
                     localStorage.removeItem('hotTokSeenVideos');
-                    
                     rendered = await fetchAndRenderOneVideo();
-                    
-                    if(!rendered) {
-                        showError("Error: Unable to fetch videos. Check API endpoint or CORS.");
-                        return;
-                    }
                 }
                 
                 fetchAndRenderOneVideo();
                 fetchAndRenderOneVideo();
             } catch (error) {
-                console.error("Stream init error:", error);
-                showError("Critical Error: Connection failed.");
+                console.error("Stream init error");
             }
         }
 
