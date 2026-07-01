@@ -59,21 +59,19 @@
     </div>
 
     <div id="video-feed" class="snap-container">
-        
-        <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
-            <div class="tiktok-loader mb-4"></div>
-            <p class="text-gray-400 text-sm font-medium animate-pulse">Starting stream...</p>
         </div>
 
-        <div id="end-loader" class="snap-section flex-col transition-opacity duration-300 hidden">
-            <div class="tiktok-loader mb-4"></div>
-            <p class="text-gray-400 text-sm font-medium">Loading next...</p>
-        </div>
+    <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
+        <div class="tiktok-loader mb-4"></div>
+        <p class="text-gray-400 text-sm font-medium animate-pulse">Starting stream...</p>
+    </div>
 
+    <div id="bottom-loader" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 border border-gray-700 px-5 py-2 rounded-full z-50 flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none shadow-lg">
+        <div class="w-4 h-4 border-2 border-t-[#ff0050] border-r-[#00f2fe] border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+        <span class="text-xs font-semibold text-white tracking-wide">Loading next...</span>
     </div>
 
     <script>
-        // ඔයාගේ API ලින්ක් එක
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec";
         
         const TAGS = ["srilanka", "sinhala", "colombo", "trending", "dance", "foryou", "viral", "comedy", "funny"];
@@ -87,8 +85,8 @@
         let isGlobalMuted = true;
         
         const feedContainer = document.getElementById('video-feed');
-        const endLoader = document.getElementById('end-loader');
         const initialLoader = document.getElementById('initial-loader');
+        const bottomLoader = document.getElementById('bottom-loader');
 
         const observerOptions = { root: feedContainer, threshold: 0.6 };
         const videoObserver = new IntersectionObserver((entries) => {
@@ -106,6 +104,18 @@
             });
         }, observerOptions);
 
+        function showBottomLoader() {
+            if (initialLoader.style.display === 'none') {
+                bottomLoader.classList.remove('opacity-0');
+                bottomLoader.classList.add('opacity-100');
+            }
+        }
+
+        function hideBottomLoader() {
+            bottomLoader.classList.remove('opacity-100');
+            bottomLoader.classList.add('opacity-0');
+        }
+
         async function fetchAndRenderOneVideo() {
             if (isFetching) return false;
 
@@ -114,7 +124,6 @@
                 const tag = TAGS[currentTagIndex];
                 currentTagIndex = (currentTagIndex + 1) % TAGS.length; 
 
-                // BUG FIX: Ensure tagCache array exists before checking length to prevent undefined error
                 if (!tagCache[tag]) {
                     tagCache[tag] = [];
                 }
@@ -126,6 +135,8 @@
                 }
 
                 isFetching = true;
+                showBottomLoader(); 
+
                 try {
                     const cacheBuster = Math.floor(Math.random() * 10000);
                     const response = await fetch(`${MY_API_URL}?tag=${tag}&cb=${cacheBuster}`);
@@ -154,10 +165,10 @@
                             
                             const firstVideo = validVideos.shift();
                             renderVideoToDOM(firstVideo);
-
                             tagCache[tag] = validVideos;
                             
                             isFetching = false;
+                            hideBottomLoader();
                             return true; 
                         }
                     }
@@ -168,13 +179,14 @@
                 isFetching = false;
                 attempts++; 
             }
+            
+            hideBottomLoader();
             return false;
         }
 
         function renderVideoToDOM(videoData) {
             if (initialLoader && initialLoader.style.display !== 'none') {
                 initialLoader.style.display = 'none';
-                endLoader.style.display = 'flex'; 
             }
 
             const section = document.createElement('div');
@@ -217,7 +229,8 @@
                 });
             });
 
-            feedContainer.insertBefore(section, endLoader);
+            // දැන් අලුත් වීඩියෝ එක අනිවාර්යයෙන්ම feed එකේ අන්තිමටම තමයි එකතු වෙන්නේ (වෙනස් වෙන්නේ නෑ)
+            feedContainer.appendChild(section);
             videoObserver.observe(section); 
         }
 
