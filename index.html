@@ -38,37 +38,16 @@
             background-color: #000000;
         }
 
-        /* පොඩි හිඩැසක් එක්ක එන Loader එක */
-        .bottom-loader-section {
-            height: 15vh; /* මුළු තිරයම ගන්නේ නෑ, පොඩි ඉඩක් විතරයි */
-            min-height: 100px;
-            width: 100%;
-            scroll-snap-align: end;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #000000;
-        }
-
         .tiktok-loader {
             border: 3px solid rgba(255, 255, 255, 0.1);
             border-left-color: #ff0050; 
             border-bottom-color: #00f2fe; 
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Play/Pause Button Animation */
-        .play-btn-overlay {
-            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-        }
-        .pop-animation {
-            transform: translate(-50%, -50%) scale(1.2) !important;
-            opacity: 0 !important;
-        }
     </style>
 </head>
 <body>
@@ -80,51 +59,34 @@
     </div>
 
     <div id="video-feed" class="snap-container">
-        
-        <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
-            <div class="tiktok-loader mb-4" style="width:40px; height:40px;"></div>
-            <p class="text-gray-400 text-sm font-medium animate-pulse" id="loading-text">Getting Tags...</p>
         </div>
 
-        <div id="bottom-loader" class="bottom-loader-section flex-col hidden">
-            <div class="tiktok-loader mb-2"></div>
-            <p class="text-gray-500 text-xs font-medium">Loading next video...</p>
-        </div>
+    <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
+        <div class="tiktok-loader mb-4"></div>
+        <p class="text-gray-400 text-sm font-medium animate-pulse">Starting stream...</p>
+    </div>
 
+    <div id="bottom-loader" class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 border border-gray-700 px-5 py-2 rounded-full z-50 flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none shadow-lg">
+        <div class="w-4 h-4 border-2 border-t-[#ff0050] border-r-[#00f2fe] border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+        <span class="text-xs font-semibold text-white tracking-wide">Loading next...</span>
     </div>
 
     <script>
-        // අලුත් Deploy ලින්ක් එක මෙතන දාන්න
-        const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec";
+        const MY_API_URL = "https://script.google.com/macros/s/AKfycbyP5gYRP4Ph-8y4xjnlEYyI7BQHuegYkL4p0XJRdrbI5WeUZ3GDJGBU0wpJl2IKS3aVSw/exec";
         
-        let TAGS = []; // දැන් මේක හිස්, Sheet එකෙන් තමයි පුරවන්නේ
+        const TAGS = ["nethmiroshel_kukku","piumi_edirisingha_hor","duneesha_piumi","srilanka_niliyo_hot","suhandi_wosadi_hot" ,"srilanka_hot_kello","srilankahotkukku",, "srilanka_kukku", "srilanka_niliyo", "praveena_disanayaka", "shaudri"];
+        
         const tagCache = {};
-        
-        let currentTagIndex = 0; 
+        TAGS.forEach(t => tagCache[t] = []);
+
+        let currentTagIndex = Math.floor(Math.random() * TAGS.length); 
         let seenVideoIds = new Set(); 
         let isFetching = false;
         let isGlobalMuted = true;
-        let currentVisibleVideo = null; // Tab මාරු කරද්දි Pause කරන්න
         
         const feedContainer = document.getElementById('video-feed');
         const initialLoader = document.getElementById('initial-loader');
         const bottomLoader = document.getElementById('bottom-loader');
-        const loadingText = document.getElementById('loading-text');
-
-        // Tab මාරු කරද්දි වීඩියෝ එක Pause/Play කිරීම
-        document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                if (currentVisibleVideo && !currentVisibleVideo.paused) {
-                    currentVisibleVideo.pause();
-                    currentVisibleVideo.dataset.wasPlaying = "true";
-                }
-            } else {
-                if (currentVisibleVideo && currentVisibleVideo.dataset.wasPlaying === "true") {
-                    currentVisibleVideo.play().catch(e => console.log(e));
-                    currentVisibleVideo.dataset.wasPlaying = "false";
-                }
-            }
-        });
 
         const observerOptions = { root: feedContainer, threshold: 0.6 };
         const videoObserver = new IntersectionObserver((entries) => {
@@ -133,16 +95,8 @@
                 if (!videoElement) return;
 
                 if (entry.isIntersecting) {
-                    currentVisibleVideo = videoElement;
                     videoElement.muted = isGlobalMuted;
                     videoElement.play().catch(e => console.log("Autoplay paused."));
-                    
-                    // Play icon එක හංගන්න
-                    const playIcon = entry.target.querySelector('.play-btn-overlay');
-                    if(playIcon) {
-                        playIcon.style.opacity = '0';
-                        playIcon.style.transform = 'translate(-50%, -50%) scale(1)';
-                    }
                 } else {
                     videoElement.pause();
                     videoElement.currentTime = 0; 
@@ -150,34 +104,29 @@
             });
         }, observerOptions);
 
-        async function fetchTagsFromSheet() {
-            try {
-                const response = await fetch(`${MY_API_URL}?action=get_tags`);
-                const json = await response.json();
-                if (json.tags && json.tags.length > 0) {
-                    TAGS = json.tags;
-                } else {
-                    TAGS = ["srilanka", "sinhala", "trending"]; // Fallback
-                }
-            } catch (e) {
-                console.log("Error fetching tags, using defaults");
-                TAGS = ["srilanka", "sinhala", "trending"];
+        function showBottomLoader() {
+            if (initialLoader.style.display === 'none') {
+                bottomLoader.classList.remove('opacity-0');
+                bottomLoader.classList.add('opacity-100');
             }
+        }
 
-            // Cache එක හදමු
-            TAGS.forEach(t => tagCache[t] = []);
-            currentTagIndex = Math.floor(Math.random() * TAGS.length);
+        function hideBottomLoader() {
+            bottomLoader.classList.remove('opacity-100');
+            bottomLoader.classList.add('opacity-0');
         }
 
         async function fetchAndRenderOneVideo() {
-            if (isFetching || TAGS.length === 0) return false;
+            if (isFetching) return false;
 
             let attempts = 0;
             while (attempts < TAGS.length) {
                 const tag = TAGS[currentTagIndex];
                 currentTagIndex = (currentTagIndex + 1) % TAGS.length; 
 
-                if (!tagCache[tag]) tagCache[tag] = [];
+                if (!tagCache[tag]) {
+                    tagCache[tag] = [];
+                }
 
                 if (tagCache[tag].length > 0) {
                     const videoData = tagCache[tag].shift();
@@ -186,7 +135,8 @@
                 }
 
                 isFetching = true;
-                
+                showBottomLoader(); 
+
                 try {
                     const cacheBuster = Math.floor(Math.random() * 10000);
                     const response = await fetch(`${MY_API_URL}?tag=${tag}&cb=${cacheBuster}`);
@@ -218,6 +168,7 @@
                             tagCache[tag] = validVideos;
                             
                             isFetching = false;
+                            hideBottomLoader();
                             return true; 
                         }
                     }
@@ -228,23 +179,20 @@
                 isFetching = false;
                 attempts++; 
             }
+            
+            hideBottomLoader();
             return false;
         }
 
         function renderVideoToDOM(videoData) {
             if (initialLoader && initialLoader.style.display !== 'none') {
                 initialLoader.style.display = 'none';
-                bottomLoader.style.display = 'flex'; // දැන් bottom loader එක පේන්න පුළුවන්
             }
 
             const section = document.createElement('div');
             section.className = "snap-section video-item";
             
-            const muteIcon = isGlobalMuted ? `
-                <svg fill="#fff" viewBox="0 0 24 24" width="24" height="24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-            ` : `
-                <svg fill="#fff" viewBox="0 0 24 24" width="24" height="24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            `;
+            const hintOpacity = isGlobalMuted ? 'opacity-100' : 'opacity-0 pointer-events-none';
 
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[16px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
@@ -259,76 +207,42 @@
                         <source src="${videoData.playUrl}" type="video/mp4">
                     </video>
 
-                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 60px; height: 60px; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center;">
-                        <svg fill="#fff" viewBox="0 0 24 24" width="36" height="36" style="margin-left: 4px;"><path d="M8 5v14l11-7z"/></svg>
-                    </div>
-
-                    <div class="absolute bottom-5 left-4 right-16 text-left z-20 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] pointer-events-none">
+                    <div class="absolute bottom-5 left-4 right-4 text-left z-20 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] pointer-events-none">
                         <h3 class="text-white font-bold text-[17px] mb-1">@${videoData.author}</h3>
                         <p class="text-gray-200 text-[14px] font-normal leading-snug line-clamp-2">${videoData.title}</p>
                     </div>
 
-                    <button class="mute-btn absolute bottom-6 right-4 bg-black/50 p-2.5 rounded-full z-30 transition-transform hover:scale-110 active:scale-95">
-                        ${muteIcon}
-                    </button>
+                    <div class="unmute-hint absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/60 text-white px-5 py-3 rounded-full pointer-events-none text-sm transition-opacity duration-300 backdrop-blur-sm font-semibold tracking-wide z-30 ${hintOpacity}">
+                        Tap to Unmute
+                    </div>
                 </div>
             `;
 
             const videoElement = section.querySelector('video');
-            const playBtnOverlay = section.querySelector('.play-btn-overlay');
-            const muteBtn = section.querySelector('.mute-btn');
             
-            // Video Click (Play/Pause)
             videoElement.addEventListener('click', () => {
-                if (videoElement.paused) {
-                    videoElement.play();
-                    playBtnOverlay.style.opacity = '1';
-                    playBtnOverlay.classList.add('pop-animation');
-                    setTimeout(() => {
-                        playBtnOverlay.classList.remove('pop-animation');
-                        playBtnOverlay.style.opacity = '0';
-                    }, 200);
-                } else {
-                    videoElement.pause();
-                    playBtnOverlay.classList.remove('pop-animation');
-                    playBtnOverlay.style.opacity = '1';
-                    playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
-                }
-            });
-
-            // Mute Button Click
-            muteBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); 
                 isGlobalMuted = !isGlobalMuted;
-                
-                const newIcon = isGlobalMuted ? `
-                    <svg fill="#fff" viewBox="0 0 24 24" width="24" height="24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                ` : `
-                    <svg fill="#fff" viewBox="0 0 24 24" width="24" height="24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                `;
-
                 document.querySelectorAll('video').forEach(vid => vid.muted = isGlobalMuted);
-                document.querySelectorAll('.mute-btn').forEach(btn => btn.innerHTML = newIcon);
+                document.querySelectorAll('.unmute-hint').forEach(hint => {
+                    hint.classList.remove('opacity-100');
+                    hint.classList.add('opacity-0', 'pointer-events-none');
+                });
             });
 
-            // වීඩියෝ එක Loader එකට උඩින් දානවා. 
-            // මේකෙන් වෙන්නේ වීඩියෝ නැති උනාම විතරක් පල්ලෙහාට Scroll වෙද්දි පොඩි හිඩැසත් එක්ක Loader එක පේනවා.
-            feedContainer.insertBefore(section, bottomLoader);
+            // දැන් අලුත් වීඩියෝ එක අනිවාර්යයෙන්ම feed එකේ අන්තිමටම තමයි එකතු වෙන්නේ (වෙනස් වෙන්නේ නෑ)
+            feedContainer.appendChild(section);
             videoObserver.observe(section); 
         }
 
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
+            
             if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
                 fetchAndRenderOneVideo();
             }
         });
 
         async function startStream() {
-            loadingText.innerText = "Loading Tags from Sheet...";
-            await fetchTagsFromSheet(); 
-            
-            loadingText.innerText = "Starting stream...";
             await fetchAndRenderOneVideo(); 
             await fetchAndRenderOneVideo();
             await fetchAndRenderOneVideo();
