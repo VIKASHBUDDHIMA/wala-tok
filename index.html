@@ -49,17 +49,29 @@
             flex-shrink: 0;
         }
 
-        .tiktok-loader {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-left-color: #ff0050; 
-            border-bottom-color: #00f2fe; 
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 0.8s linear infinite;
+        /* --- අලුත් ලස්සන Wave Loader එක --- */
+        .wave-loader {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .wave-bar {
+            width: 6px;
+            height: 20px;
+            border-radius: 4px;
+            animation: wave-anim 1s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(1) { background-color: #ff0050; animation-delay: 0s; }
+        .wave-bar:nth-child(2) { background-color: #ffffff; animation-delay: 0.15s; }
+        .wave-bar:nth-child(3) { background-color: #00f2fe; animation-delay: 0.3s; }
 
+        @keyframes wave-anim {
+            0%, 100% { transform: scaleY(0.6); }
+            50% { transform: scaleY(1.6); }
+        }
+
+        /* --- Animations --- */
         .play-btn-overlay {
             transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
@@ -67,39 +79,88 @@
             transform: translate(-50%, -50%) scale(1.3) !important;
             opacity: 0 !important;
         }
+        
+        /* Modern Mute Button Effect */
+        .modern-btn {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        .modern-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
 
-    <div class="hidden md:block absolute top-6 right-8 z-50 pointer-events-none">
+    <div class="hidden md:block absolute top-8 left-10 z-50 pointer-events-none">
         <h1 class="text-3xl font-black italic tracking-wider drop-shadow-md">
             <span class="text-white">HOT</span><span class="text-[#ff0050]">TOK</span>
         </h1>
     </div>
 
-    <div id="video-feed" class="snap-container">
+    <div class="hidden md:flex absolute left-10 top-1/2 transform -translate-y-1/2 flex-col gap-6 z-40 max-w-[220px]">
+        <div class="bg-[#111111] bg-opacity-80 backdrop-blur-md p-5 rounded-2xl border border-gray-800 shadow-2xl">
+            <h3 class="text-gray-400 text-[11px] font-bold uppercase tracking-widest mb-4">Quick Controls</h3>
+            <div class="flex items-center gap-3 mb-3 text-sm text-gray-200">
+                <div class="flex flex-col gap-1">
+                    <span class="bg-gray-800 px-2.5 py-1.5 rounded-md text-xs font-mono shadow-sm flex items-center justify-center border border-gray-700">▲</span>
+                    <span class="bg-gray-800 px-2.5 py-1.5 rounded-md text-xs font-mono shadow-sm flex items-center justify-center border border-gray-700">▼</span>
+                </div>
+                <span class="text-[13px]">Next / Prev Video</span>
+            </div>
+            <div class="flex items-center gap-3 text-sm text-gray-200">
+                <span class="bg-gray-800 w-8 h-8 rounded-md text-xs font-mono shadow-sm flex items-center justify-center border border-gray-700">M</span>
+                <span class="text-[13px]">Mute / Unmute</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="hidden md:flex absolute right-12 top-1/2 transform -translate-y-1/2 flex-col gap-5 z-40">
+        <button onclick="scrollFeed(-1)" class="modern-btn p-4 rounded-full group outline-none" title="Previous Video">
+            <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path>
+            </svg>
+        </button>
+        <button onclick="scrollFeed(1)" class="modern-btn p-4 rounded-full group outline-none" title="Next Video">
+            <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <div id="video-feed" class="snap-container relative z-10">
         
         <div id="first-placeholder" class="snap-section video-item">
-            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[16px] bg-[#1a1a1a] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                <button class="absolute top-6 left-4 bg-black/60 p-3 rounded-full z-40 opacity-70">
-                    <svg fill="#fff" viewBox="0 0 24 24" width="28" height="28"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                </button>
-                <div class="tiktok-loader" style="width:45px; height:45px;"></div>
-                <div class="absolute bottom-5 left-4 right-16 text-left z-20 opacity-40">
-                    <div class="w-32 h-4 bg-gray-500 rounded mb-2"></div>
-                    <div class="w-48 h-3 bg-gray-500 rounded"></div>
+            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#121212] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
+                <div class="wave-loader">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
+                
+                <div class="absolute bottom-6 left-4 right-16 text-left z-20 opacity-30">
+                    <div class="w-32 h-4 bg-gray-600 rounded mb-3"></div>
+                    <div class="w-48 h-3 bg-gray-600 rounded"></div>
                 </div>
             </div>
         </div>
 
         <div id="bottom-loader" class="bottom-loader-section hidden flex-col">
-            <div class="tiktok-loader mb-2"></div>
+            <div class="wave-loader">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+            </div>
         </div>
 
     </div>
 
     <script>
-        // ඔයා දීපු URL එක කෙලින්ම දැම්මා
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
@@ -120,6 +181,10 @@
         const feedContainer = document.getElementById('video-feed');
         const bottomLoader = document.getElementById('bottom-loader');
 
+        // Mute & Unmute SVGs (Sleek Modern Icons)
+        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
+        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
+
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -136,6 +201,34 @@
                 }
                 localStorage.setItem('hotTokSeenVideos', JSON.stringify(seenVideoIds));
             }
+        }
+
+        // PC Mode Button Scroll Logic
+        function scrollFeed(direction) {
+            const height = feedContainer.clientHeight;
+            feedContainer.scrollBy({ top: direction * height, behavior: 'smooth' });
+        }
+
+        // Keyboard Shortcuts Logic
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                scrollFeed(-1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                scrollFeed(1);
+            } else if (e.key.toLowerCase() === 'm') {
+                toggleGlobalMute();
+            }
+        });
+
+        // Global Mute Toggle Logic
+        function toggleGlobalMute() {
+            isGlobalMuted = !isGlobalMuted;
+            document.querySelectorAll('video').forEach(vid => vid.muted = isGlobalMuted);
+            document.querySelectorAll('.mute-btn').forEach(btn => {
+                btn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
+            });
         }
 
         document.addEventListener("visibilitychange", () => {
@@ -206,7 +299,6 @@
             while (attempts < 5 && !found) {
                 const currentTag = TAGS[currentTagIndex];
                 
-                // එක ටැග් එකක් ගත්ත ගමන් අනිවාර්යයෙන්ම ඊළඟ ටැග් එකට මාරු වෙනවා
                 currentTagIndex = (currentTagIndex + 1) % TAGS.length;
                 if (currentTagIndex === 0) {
                     shuffleArray(TAGS); 
@@ -237,7 +329,6 @@
                     }));
 
                     if (validVideos.length > 0) {
-                        // මෙතන තමයි වෙනස: සෙට් පිටින් ගන්නේ නෑ, හරියන පළවෙනි එක විතරක් ගන්නවා.
                         videoPool.push(validVideos[0]); 
                         found = true;
                     }
@@ -252,7 +343,6 @@
         }
 
         async function fillPoolInBackground() {
-            // Pool එකේ වීඩියෝ 5කට අඩුවෙන් තියෙනවනම් දිගටම ලෝඩ් කරනවා Background එකේ
             if (videoPool.length < 5 && !isFetching) {
                 await fetchVideosToPool();
                 fillPoolInBackground();
@@ -261,19 +351,13 @@
 
         function createVideoSection(videoData) {
             const section = document.createElement('div');
-            section.className = "snap-section video-item";
+            section.className = "snap-section video-item p-0 md:p-4"; // md:p-4 adds spacing on PC
             
-            const muteIcon = isGlobalMuted ? `
-                <svg fill="#fff" viewBox="0 0 24 24" width="28" height="28"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-            ` : `
-                <svg fill="#fff" viewBox="0 0 24 24" width="28" height="28"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            `;
-
             section.innerHTML = `
-                <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[16px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
+                <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
-                    <button class="mute-btn absolute top-6 left-4 bg-black/60 p-3 rounded-full z-40 transition-transform hover:scale-110 active:scale-95">
-                        ${muteIcon}
+                    <button class="mute-btn modern-btn absolute top-6 right-5 p-2.5 rounded-full z-40 outline-none">
+                        ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
 
                     <video 
@@ -286,12 +370,12 @@
                         <source src="${videoData.playUrl}" type="video/mp4">
                     </video>
 
-                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30;">
+                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(4px);">
                         <svg fill="#fff" viewBox="0 0 24 24" width="40" height="40" style="margin-left: 4px;"><path d="M8 5v14l11-7z"/></svg>
                     </div>
 
-                    <div class="absolute bottom-5 left-4 right-16 text-left z-20 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] pointer-events-none">
-                        <h3 class="text-white font-bold text-[17px] mb-1">@${videoData.author}</h3>
+                    <div class="absolute bottom-6 left-5 right-16 text-left z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] pointer-events-none">
+                        <h3 class="text-white font-bold text-[17px] mb-1.5 tracking-wide">@${videoData.author}</h3>
                         <p class="text-gray-200 text-[14px] font-normal leading-snug line-clamp-2">${videoData.title}</p>
                     </div>
                 </div>
@@ -324,16 +408,7 @@
 
             muteBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                isGlobalMuted = !isGlobalMuted; 
-                
-                const newIcon = isGlobalMuted ? `
-                    <svg fill="#fff" viewBox="0 0 24 24" width="28" height="28"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                ` : `
-                    <svg fill="#fff" viewBox="0 0 24 24" width="28" height="28"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                `;
-
-                document.querySelectorAll('video').forEach(vid => vid.muted = isGlobalMuted);
-                document.querySelectorAll('.mute-btn').forEach(btn => btn.innerHTML = newIcon);
+                toggleGlobalMute();
             });
 
             return section;
@@ -346,7 +421,6 @@
                 
                 const section = createVideoSection(videoData);
                 
-                // මුලින්ම ලෝඩ් වෙනකොට Placeholder එක රිප්ලේස් කරනවා
                 const placeholder = document.getElementById('first-placeholder');
                 if (placeholder) {
                     placeholder.replaceWith(section);
@@ -358,7 +432,6 @@
                 
                 videoObserver.observe(section); 
             }
-            // රෙන්ඩර් කරපු ගමන් ආයෙත් Pool එක පුරවන්න order එක දෙනවා
             fillPoolInBackground();
         }
 
@@ -380,9 +453,7 @@
                     await fetchVideosToPool();
                 }
                 
-                // පළවෙනි වීඩියෝ එක පෙන්නනවා
                 await requestNextRender();
-                // Scroll කරන්න ලේසි වෙන්න දෙවෙනි එකත් යටින් රෙන්ඩර් කරලා තියනවා
                 setTimeout(requestNextRender, 500);
                 
             } catch (error) {
