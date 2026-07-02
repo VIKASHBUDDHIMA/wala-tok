@@ -245,7 +245,8 @@
             }
         });
 
-        const observerOptions = { root: feedContainer, threshold: 0.6 };
+        // Threshold 0.5 කරා Mobile වලට ලේසි වෙන්න
+        const observerOptions = { root: feedContainer, threshold: 0.5 };
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const videoElement = entry.target.querySelector('video');
@@ -254,7 +255,7 @@
 
                 if (entry.isIntersecting) {
                     currentVisibleVideo = videoElement;
-                    videoElement.muted = isGlobalMuted;
+                    videoElement.muted = isGlobalMuted; // Sync state
                     
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
@@ -264,6 +265,7 @@
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
+                            // Mobile Auto-play block වුනොත් Play බටන් එක පෙන්නනවා
                             if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                         });
                     }
@@ -351,8 +353,9 @@
 
         function createVideoSection(videoData) {
             const section = document.createElement('div');
-            section.className = "snap-section video-item p-0 md:p-4"; // md:p-4 adds spacing on PC
+            section.className = "snap-section video-item p-0 md:p-4"; 
             
+            // Mobile Auto-play වලට විශේෂ Tag: autoplay, webkit-playsinline, playsinline, muted
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
@@ -363,9 +366,11 @@
                     <video 
                         class="w-full h-full object-cover cursor-pointer"
                         loop 
+                        autoplay
                         playsinline 
+                        webkit-playsinline
                         preload="auto"
-                        ${isGlobalMuted ? 'muted' : ''} 
+                        muted 
                         poster="${videoData.cover}">
                         <source src="${videoData.playUrl}" type="video/mp4">
                     </video>
@@ -385,6 +390,8 @@
             const playBtnOverlay = section.querySelector('.play-btn-overlay');
             const muteBtn = section.querySelector('.mute-btn');
             
+            videoElement.muted = isGlobalMuted; // HTML එකේ දාලා තිබ්බට ආයෙත් JS වලින් අල්ලනවා
+
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
                     const playPromise = videoElement.play();
