@@ -39,9 +39,9 @@
         }
 
         .bottom-loader-section {
-            height: 100dvh;
+            height: 12vh;
             width: 100%;
-            scroll-snap-align: start; 
+            scroll-snap-align: end; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -49,11 +49,7 @@
             flex-shrink: 0;
         }
 
-        /* --- iOS Safari Native Controls Hide --- */
-        video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
-        video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
-
-        /* --- Wave Loader --- */
+        /* --- අලුත් ලස්සන Wave Loader එක --- */
         .wave-loader {
             display: inline-flex;
             align-items: center;
@@ -84,7 +80,7 @@
             opacity: 0 !important;
         }
         
-        /* PC Mode Modern Button Effect */
+        /* Modern Mute Button Effect */
         .modern-btn {
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(8px);
@@ -154,13 +150,11 @@
             </div>
         </div>
 
-        <div id="bottom-loader" class="bottom-loader-section hidden">
-            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#121212] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                <div class="wave-loader">
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                </div>
+        <div id="bottom-loader" class="bottom-loader-section hidden flex-col">
+            <div class="wave-loader">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
             </div>
         </div>
 
@@ -181,15 +175,14 @@
         }
 
         let isFetching = false;
-        let isRendering = false;
-        let isGlobalMuted = true; // මුලින්ම වෙබ් එකට එද්දි Muted 
+        let isGlobalMuted = true;
         let currentVisibleVideo = null; 
         
         const feedContainer = document.getElementById('video-feed');
         const bottomLoader = document.getElementById('bottom-loader');
 
-        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
-        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
+        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
+        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
 
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -226,12 +219,23 @@
             }
         });
 
+        // Global Mute Toggle Logic
         function toggleGlobalMute() {
             isGlobalMuted = !isGlobalMuted;
             document.querySelectorAll('video').forEach(vid => vid.muted = isGlobalMuted);
             document.querySelectorAll('.mute-btn').forEach(btn => {
                 btn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
             });
+            
+            // Re-trigger play if it was blocked before
+            if (currentVisibleVideo && currentVisibleVideo.paused) {
+                currentVisibleVideo.play().catch(e => console.log("Play interrupted: ", e));
+                const playBtnOverlay = currentVisibleVideo.parentElement.querySelector('.play-btn-overlay');
+                if(playBtnOverlay) {
+                    playBtnOverlay.style.opacity = '0';
+                    playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
+                }
+            }
         }
 
         document.addEventListener("visibilitychange", () => {
@@ -257,30 +261,23 @@
 
                 if (entry.isIntersecting) {
                     currentVisibleVideo = videoElement;
-                    
-                    // වීඩියෝ එකට Global Mute State එක අනිවාර්යයෙන්ම ලබා දෙනවා (බලෙන් Mute කරන්නේ නෑ)
-                    videoElement.muted = isGlobalMuted; 
+                    videoElement.muted = isGlobalMuted; // State sync වෙනවා හරියටම
                     
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            // Play වුනා නම් අයිකන් එක හංගනවා
                             if(playBtnOverlay) {
                                 playBtnOverlay.style.opacity = '0';
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            // බ්‍රවුසර් එකෙන් ප්ලේ වෙන එක Block කරොත් විතරක් Play අයිකන් එක පෙන්වනවා.
-                            // මෙතනදී Auto-Mute කරන්නේ නෑ! ඔයාගේ Unmute State එක එහෙම්මම තියෙනවා.
-                            console.log("Autoplay waiting for interaction");
+                            // User interact කරලා නැත්තම් play button එක පෙන්නනවා
                             if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                         });
                     }
                 } else {
                     videoElement.pause();
                     videoElement.currentTime = 0; 
-                    // වීඩියෝ එකෙන් අයින් වෙද්දි Pause අයිකන් එක අයින් කරනවා
-                    if(playBtnOverlay) playBtnOverlay.style.opacity = '0';
                 }
             });
         }, observerOptions);
@@ -309,6 +306,7 @@
 
             while (attempts < 5 && !found) {
                 const currentTag = TAGS[currentTagIndex];
+                
                 currentTagIndex = (currentTagIndex + 1) % TAGS.length;
                 if (currentTagIndex === 0) {
                     shuffleArray(TAGS); 
@@ -341,7 +339,6 @@
                     if (validVideos.length > 0) {
                         videoPool.push(validVideos[0]); 
                         found = true;
-                        requestNextRender();
                     }
                 } catch (e) {
                     console.error("Fetch error, switching tag...");
@@ -364,10 +361,11 @@
             const section = document.createElement('div');
             section.className = "snap-section video-item p-0 md:p-4"; 
             
+            // HTML එකෙන් Autoplay අයින් කරලා, Observer එකටම control එක දුන්නා
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
-                    <button class="mute-btn absolute top-6 right-5 p-2.5 z-40 outline-none bg-transparent border-none text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)] transition-transform active:scale-95">
+                    <button class="mute-btn modern-btn absolute top-6 right-5 p-2.5 rounded-full z-40 outline-none">
                         ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
 
@@ -376,9 +374,10 @@
                         loop 
                         playsinline 
                         webkit-playsinline
-                        preload="metadata"
-                        src="${videoData.playUrl}"
+                        preload="auto"
+                        muted 
                         poster="${videoData.cover}">
+                        <source src="${videoData.playUrl}" type="video/mp4">
                     </video>
 
                     <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(4px);">
@@ -398,18 +397,23 @@
             
             videoElement.muted = isGlobalMuted; 
 
-            // වීඩියෝ එක Click කරාම Push (Pause) වෙන ලොජික් එක
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            playBtnOverlay.style.opacity = '0'; // Play වෙනකොට අයිකන් එක හංගනවා
+                            playBtnOverlay.style.opacity = '1';
+                            playBtnOverlay.classList.add('pop-animation');
+                            setTimeout(() => {
+                                playBtnOverlay.classList.remove('pop-animation');
+                                playBtnOverlay.style.opacity = '0';
+                            }, 200);
                         }).catch(e => console.log(e));
                     }
                 } else {
                     videoElement.pause();
-                    playBtnOverlay.style.opacity = '1'; // Pause කරාම අයිකන් එක පෙන්වනවා
+                    playBtnOverlay.classList.remove('pop-animation');
+                    playBtnOverlay.style.opacity = '1';
                     playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                 }
             });
@@ -423,8 +427,7 @@
         }
 
         async function requestNextRender() {
-            if (videoPool.length > 0 && !isRendering) {
-                isRendering = true;
+            if (videoPool.length > 0) {
                 const videoData = videoPool.shift(); 
                 markVideoAsSeen(videoData.id);
                 
@@ -435,19 +438,19 @@
                     placeholder.replaceWith(section);
                     bottomLoader.style.display = 'flex'; 
                     bottomLoader.classList.remove('hidden');
+                    videoObserver.observe(section); 
                 } else {
-                    const loaderRect = bottomLoader.getBoundingClientRect();
-                    const loaderInView = (loaderRect.top >= 0 && loaderRect.top < window.innerHeight);
+                    // ඔයා scroll කරලා Loading bar එක ගාවට ඇවිල්ලා නම් ඉන්නේ කියලා check කරනවා
+                    const isNearBottom = feedContainer.scrollHeight - feedContainer.scrollTop - feedContainer.clientHeight < 150;
                     
                     feedContainer.insertBefore(section, bottomLoader);
+                    videoObserver.observe(section); 
                     
-                    if (loaderInView) {
-                        section.scrollIntoView({ behavior: 'smooth' });
+                    if (isNearBottom) {
+                        // අලුත් Video එක Load වුණ ගමන් auto screen එකට එන්න හදලා තියෙන්නේ
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 }
-                
-                videoObserver.observe(section); 
-                isRendering = false;
             }
             fillPoolInBackground();
         }
@@ -455,19 +458,9 @@
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
             if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
-                fillPoolInBackground();
+                requestNextRender();
             }
         });
-
-        function unlockAutoplay() {
-            if (currentVisibleVideo) {
-                currentVisibleVideo.play().catch(e => console.log(e));
-            }
-            document.removeEventListener('touchstart', unlockAutoplay);
-            document.removeEventListener('click', unlockAutoplay);
-        }
-        document.addEventListener('touchstart', unlockAutoplay, { passive: true });
-        document.addEventListener('click', unlockAutoplay, { passive: true });
 
         async function startStream() {
             try {
