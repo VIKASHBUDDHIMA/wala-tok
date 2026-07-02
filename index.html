@@ -94,6 +94,7 @@
         
         let TAGS = []; 
         let videoPool = []; 
+        let lastSeenAuthor = ""; 
         
         let seenVideoIds = [];
         try {
@@ -110,10 +111,18 @@
         const initialLoader = document.getElementById('initial-loader');
         const bottomLoader = document.getElementById('bottom-loader');
 
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         function markVideoAsSeen(id) {
             if (!seenVideoIds.includes(id)) {
                 seenVideoIds.push(id);
-                if (seenVideoIds.length > 500) {
+                if (seenVideoIds.length > 800) {
                     seenVideoIds.shift(); 
                 }
                 localStorage.setItem('hotTokSeenVideos', JSON.stringify(seenVideoIds));
@@ -184,9 +193,11 @@
 
             let attempts = 0;
             let found = false;
+            
+            let shuffledTags = shuffleArray([...TAGS]);
 
             while (attempts < 3 && !found) {
-                const randomTag = TAGS[Math.floor(Math.random() * TAGS.length)];
+                const randomTag = shuffledTags[attempts % shuffledTags.length];
                 
                 try {
                     const response = await fetch(`${MY_API_URL}?action=get_videos&tag=${randomTag}`);
@@ -212,7 +223,7 @@
 
                     if (validVideos.length > 0) {
                         videoPool.push(...validVideos);
-                        videoPool.sort(() => Math.random() - 0.5); 
+                        shuffleArray(videoPool); 
                         found = true;
                     }
                 } catch (e) {
@@ -226,19 +237,31 @@
         }
 
         async function fetchAndRenderOneVideo() {
+            if (videoPool.length < 5 && !isFetching) {
+                fetchVideosToPool();
+            }
+
             if (videoPool.length === 0) {
                 const success = await fetchVideosToPool();
                 if (!success) return false; 
             }
             
             if (videoPool.length > 0) {
+                if (videoPool.length > 1 && lastSeenAuthor !== "") {
+                    if (videoPool[0].author === lastSeenAuthor) {
+                        let swapIdx = videoPool.findIndex(v => v.author !== lastSeenAuthor);
+                        if (swapIdx > 0) {
+                            let temp = videoPool[0];
+                            videoPool[0] = videoPool[swapIdx];
+                            videoPool[swapIdx] = temp;
+                        }
+                    }
+                }
+
                 const videoData = videoPool.shift(); 
+                lastSeenAuthor = videoData.author; 
                 markVideoAsSeen(videoData.id);
                 renderVideoToDOM(videoData);
-            }
-
-            if (videoPool.length < 3 && !isFetching) {
-                fetchVideosToPool();
             }
             
             return true;
@@ -333,7 +356,7 @@
 
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
-            if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.2) {
+            if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
                 fetchAndRenderOneVideo();
             }
         });
