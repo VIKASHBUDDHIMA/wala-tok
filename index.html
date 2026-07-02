@@ -93,6 +93,7 @@
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
+        let currentTagIndex = 0;
         let videoPool = []; 
         let lastSeenAuthor = ""; 
         
@@ -178,13 +179,14 @@
                 const response = await fetch(`${MY_API_URL}?action=get_tags`);
                 const json = await response.json();
                 if (json.tags && Array.isArray(json.tags) && json.tags.length > 0) {
-                    TAGS = json.tags;
+                    TAGS = shuffleArray(json.tags); // Shuffle tags list immediately
                 } else {
                     TAGS = ["srilanka"]; 
                 }
             } catch (e) {
                 TAGS = ["srilanka"];
             }
+            currentTagIndex = 0;
         }
 
         async function fetchVideosToPool() {
@@ -193,21 +195,28 @@
 
             let attempts = 0;
             let found = false;
-            
-            let shuffledTags = shuffleArray([...TAGS]);
 
-            while (attempts < 3 && !found) {
-                const randomTag = shuffledTags[attempts % shuffledTags.length];
+            while (attempts < 5 && !found) {
+                // Get the current tag from our shuffled cycle
+                const currentTag = TAGS[currentTagIndex];
+                
+                // Move to next tag index for the next call
+                currentTagIndex = (currentTagIndex + 1) % TAGS.length;
+                if (currentTagIndex === 0) {
+                    shuffleArray(TAGS); // Reshuffle tags array when a full loop completes
+                }
                 
                 try {
-                    const response = await fetch(`${MY_API_URL}?action=get_videos&tag=${randomTag}`);
-                    if (!response.ok) throw new Error("Network response was not ok");
+                    const response = await fetch(`${MY_API_URL}?action=get_videos&tag=${currentTag}`);
+                    if (!response.ok) throw new Error("Network issue");
                     
                     const json = await response.json();
                     let rawVideos = [];
 
-                    if (json.data && Array.isArray(json.data)) rawVideos = json.data;
-                    else if (json.data && Array.isArray(json.data.videos)) rawVideos = json.data.videos;
+                    if (json && json.data) {
+                        if (Array.isArray(json.data)) rawVideos = json.data;
+                        else if (Array.isArray(json.data.videos)) rawVideos = json.data.videos;
+                    }
 
                     let validVideos = rawVideos.filter(v => {
                         const id = v.id || v.video_id;
@@ -223,11 +232,11 @@
 
                     if (validVideos.length > 0) {
                         videoPool.push(...validVideos);
-                        shuffleArray(videoPool); 
+                        shuffleArray(videoPool); // Double shuffle the videos inside pool
                         found = true;
                     }
                 } catch (e) {
-                    console.error("Fetch error");
+                    console.error("Fetch error, switching tag...");
                 }
                 attempts++;
             }
@@ -237,16 +246,17 @@
         }
 
         async function fetchAndRenderOneVideo() {
-            if (videoPool.length < 5 && !isFetching) {
-                fetchVideosToPool();
-            }
-
             if (videoPool.length === 0) {
                 const success = await fetchVideosToPool();
-                if (!success) return false; 
+                if (!success) {
+                    // Retry loop if failed, keeps loader spinning safely
+                    setTimeout(fetchAndRenderOneVideo, 2000);
+                    return false; 
+                }
             }
             
             if (videoPool.length > 0) {
+                // Prevent continuous videos from the same creator
                 if (videoPool.length > 1 && lastSeenAuthor !== "") {
                     if (videoPool[0].author === lastSeenAuthor) {
                         let swapIdx = videoPool.findIndex(v => v.author !== lastSeenAuthor);
@@ -262,6 +272,11 @@
                 lastSeenAuthor = videoData.author; 
                 markVideoAsSeen(videoData.id);
                 renderVideoToDOM(videoData);
+            }
+
+            // Always prefetch if pool drops below 3 videos
+            if (videoPool.length < 3 && !isFetching) {
+                fetchVideosToPool();
             }
             
             return true;
@@ -357,13 +372,15 @@
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
             if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
-                fetchAndRenderOneVideo();
+                if (videoPool.length > 0 && !isFetching) {
+                    fetchAndRenderOneVideo();
+                }
             }
         });
 
         async function startStream() {
             if (MY_API_URL === "YOUR_APPS_SCRIPT_URL_HERE" || MY_API_URL.trim() === "") {
-                console.warn("API URL not configured.");
+                console.warn("API URL missing.");
                 return;
             }
 
@@ -380,7 +397,8 @@
                 fetchAndRenderOneVideo();
                 fetchAndRenderOneVideo();
             } catch (error) {
-                console.error("Stream init error");
+                console.error("Init failed, retrying...");
+                setTimeout(startStream, 2000);
             }
         }
 
