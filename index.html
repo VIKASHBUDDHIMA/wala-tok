@@ -79,8 +79,17 @@
 
     <div id="video-feed" class="snap-container">
         
-        <div id="initial-loader" class="h-[100dvh] w-full flex flex-col justify-center items-center bg-black z-50 absolute top-0 left-0">
-            <div class="tiktok-loader mb-4" id="main-spinner" style="width:40px; height:40px;"></div>
+        <div id="first-placeholder" class="snap-section video-item">
+            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[16px] bg-[#1a1a1a] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
+                <button class="absolute top-6 left-4 bg-black/60 p-3 rounded-full z-40 opacity-70">
+                    <svg fill="#fff" viewBox="0 0 24 24" width="28" height="28"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                </button>
+                <div class="tiktok-loader" style="width:45px; height:45px;"></div>
+                <div class="absolute bottom-5 left-4 right-16 text-left z-20 opacity-40">
+                    <div class="w-32 h-4 bg-gray-500 rounded mb-2"></div>
+                    <div class="w-48 h-3 bg-gray-500 rounded"></div>
+                </div>
+            </div>
         </div>
 
         <div id="bottom-loader" class="bottom-loader-section hidden flex-col">
@@ -90,12 +99,12 @@
     </div>
 
     <script>
+        // ඔයා දීපු URL එක කෙලින්ම දැම්මා
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
         let currentTagIndex = 0;
         let videoPool = []; 
-        let lastSeenAuthor = ""; 
         
         let seenVideoIds = [];
         try {
@@ -109,7 +118,6 @@
         let currentVisibleVideo = null; 
         
         const feedContainer = document.getElementById('video-feed');
-        const initialLoader = document.getElementById('initial-loader');
         const bottomLoader = document.getElementById('bottom-loader');
 
         function shuffleArray(array) {
@@ -163,7 +171,6 @@
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            console.log("Autoplay waiting for interaction");
                             if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                         });
                     }
@@ -179,7 +186,7 @@
                 const response = await fetch(`${MY_API_URL}?action=get_tags`);
                 const json = await response.json();
                 if (json.tags && Array.isArray(json.tags) && json.tags.length > 0) {
-                    TAGS = shuffleArray(json.tags); // Shuffle tags list immediately
+                    TAGS = shuffleArray(json.tags); 
                 } else {
                     TAGS = ["srilanka"]; 
                 }
@@ -197,13 +204,12 @@
             let found = false;
 
             while (attempts < 5 && !found) {
-                // Get the current tag from our shuffled cycle
                 const currentTag = TAGS[currentTagIndex];
                 
-                // Move to next tag index for the next call
+                // එක ටැග් එකක් ගත්ත ගමන් අනිවාර්යයෙන්ම ඊළඟ ටැග් එකට මාරු වෙනවා
                 currentTagIndex = (currentTagIndex + 1) % TAGS.length;
                 if (currentTagIndex === 0) {
-                    shuffleArray(TAGS); // Reshuffle tags array when a full loop completes
+                    shuffleArray(TAGS); 
                 }
                 
                 try {
@@ -231,8 +237,8 @@
                     }));
 
                     if (validVideos.length > 0) {
-                        videoPool.push(...validVideos);
-                        shuffleArray(videoPool); // Double shuffle the videos inside pool
+                        // මෙතන තමයි වෙනස: සෙට් පිටින් ගන්නේ නෑ, හරියන පළවෙනි එක විතරක් ගන්නවා.
+                        videoPool.push(validVideos[0]); 
                         found = true;
                     }
                 } catch (e) {
@@ -245,50 +251,15 @@
             return found;
         }
 
-        async function fetchAndRenderOneVideo() {
-            if (videoPool.length === 0) {
-                const success = await fetchVideosToPool();
-                if (!success) {
-                    // Retry loop if failed, keeps loader spinning safely
-                    setTimeout(fetchAndRenderOneVideo, 2000);
-                    return false; 
-                }
+        async function fillPoolInBackground() {
+            // Pool එකේ වීඩියෝ 5කට අඩුවෙන් තියෙනවනම් දිගටම ලෝඩ් කරනවා Background එකේ
+            if (videoPool.length < 5 && !isFetching) {
+                await fetchVideosToPool();
+                fillPoolInBackground();
             }
-            
-            if (videoPool.length > 0) {
-                // Prevent continuous videos from the same creator
-                if (videoPool.length > 1 && lastSeenAuthor !== "") {
-                    if (videoPool[0].author === lastSeenAuthor) {
-                        let swapIdx = videoPool.findIndex(v => v.author !== lastSeenAuthor);
-                        if (swapIdx > 0) {
-                            let temp = videoPool[0];
-                            videoPool[0] = videoPool[swapIdx];
-                            videoPool[swapIdx] = temp;
-                        }
-                    }
-                }
-
-                const videoData = videoPool.shift(); 
-                lastSeenAuthor = videoData.author; 
-                markVideoAsSeen(videoData.id);
-                renderVideoToDOM(videoData);
-            }
-
-            // Always prefetch if pool drops below 3 videos
-            if (videoPool.length < 3 && !isFetching) {
-                fetchVideosToPool();
-            }
-            
-            return true;
         }
 
-        function renderVideoToDOM(videoData) {
-            if (initialLoader && initialLoader.style.display !== 'none') {
-                initialLoader.style.display = 'none';
-                bottomLoader.style.display = 'flex'; 
-                bottomLoader.classList.remove('hidden');
-            }
-
+        function createVideoSection(videoData) {
             const section = document.createElement('div');
             section.className = "snap-section video-item";
             
@@ -365,39 +336,57 @@
                 document.querySelectorAll('.mute-btn').forEach(btn => btn.innerHTML = newIcon);
             });
 
-            feedContainer.insertBefore(section, bottomLoader);
-            videoObserver.observe(section); 
+            return section;
+        }
+
+        async function requestNextRender() {
+            if (videoPool.length > 0) {
+                const videoData = videoPool.shift(); 
+                markVideoAsSeen(videoData.id);
+                
+                const section = createVideoSection(videoData);
+                
+                // මුලින්ම ලෝඩ් වෙනකොට Placeholder එක රිප්ලේස් කරනවා
+                const placeholder = document.getElementById('first-placeholder');
+                if (placeholder) {
+                    placeholder.replaceWith(section);
+                    bottomLoader.style.display = 'flex'; 
+                    bottomLoader.classList.remove('hidden');
+                } else {
+                    feedContainer.insertBefore(section, bottomLoader);
+                }
+                
+                videoObserver.observe(section); 
+            }
+            // රෙන්ඩර් කරපු ගමන් ආයෙත් Pool එක පුරවන්න order එක දෙනවා
+            fillPoolInBackground();
         }
 
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
             if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
-                if (videoPool.length > 0 && !isFetching) {
-                    fetchAndRenderOneVideo();
-                }
+                requestNextRender();
             }
         });
 
         async function startStream() {
-            if (MY_API_URL === "YOUR_APPS_SCRIPT_URL_HERE" || MY_API_URL.trim() === "") {
-                console.warn("API URL missing.");
-                return;
-            }
-
             try {
                 await fetchTagsFromSheet(); 
-                let rendered = await fetchAndRenderOneVideo(); 
                 
-                if (!rendered) {
+                let success = await fetchVideosToPool(); 
+                if (!success) {
                     seenVideoIds = [];
                     localStorage.removeItem('hotTokSeenVideos');
-                    rendered = await fetchAndRenderOneVideo();
+                    await fetchVideosToPool();
                 }
                 
-                fetchAndRenderOneVideo();
-                fetchAndRenderOneVideo();
+                // පළවෙනි වීඩියෝ එක පෙන්නනවා
+                await requestNextRender();
+                // Scroll කරන්න ලේසි වෙන්න දෙවෙනි එකත් යටින් රෙන්ඩර් කරලා තියනවා
+                setTimeout(requestNextRender, 500);
+                
             } catch (error) {
-                console.error("Init failed, retrying...");
+                console.error("Stream init error");
                 setTimeout(startStream, 2000);
             }
         }
