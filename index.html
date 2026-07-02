@@ -38,10 +38,11 @@
             background-color: #000000;
         }
 
-        /* Fixed: scroll-snap-align අයින් කරා ලෝඩර් එක මැද හිරවීම නැති කරන්න */
+        /* Fixed: ලෝඩින් බාර් එක හිස් තැනට ඇවිත් Snap වෙන්න 100dvh සහ snap-align හැදුවා */
         .bottom-loader-section {
-            height: 12vh;
+            height: 100dvh;
             width: 100%;
+            scroll-snap-align: start; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -49,7 +50,7 @@
             flex-shrink: 0;
         }
 
-        /* --- iOS Safari Native Controls & Play Button Hide --- */
+        /* --- iOS Safari Native Controls Hide --- */
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
@@ -83,6 +84,20 @@
             transform: translate(-50%, -50%) scale(1.3) !important;
             opacity: 0 !important;
         }
+        
+        /* PC Mode Modern Button Effect */
+        .modern-btn {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        .modern-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -111,12 +126,12 @@
     </div>
 
     <div class="hidden md:flex absolute right-12 top-1/2 transform -translate-y-1/2 flex-col gap-5 z-40">
-        <button onclick="scrollFeed(-1)" class="p-4 rounded-full bg-black bg-opacity-40 border border-gray-800 group outline-none" title="Previous Video">
+        <button onclick="scrollFeed(-1)" class="modern-btn p-4 rounded-full group outline-none" title="Previous Video">
             <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path>
             </svg>
         </button>
-        <button onclick="scrollFeed(1)" class="p-4 rounded-full bg-black bg-opacity-40 border border-gray-800 group outline-none" title="Next Video">
+        <button onclick="scrollFeed(1)" class="modern-btn p-4 rounded-full group outline-none" title="Next Video">
             <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
             </svg>
@@ -140,11 +155,13 @@
             </div>
         </div>
 
-        <div id="bottom-loader" class="bottom-loader-section hidden flex-col">
-            <div class="wave-loader">
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
-                <div class="wave-bar"></div>
+        <div id="bottom-loader" class="bottom-loader-section hidden">
+            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#121212] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
+                <div class="wave-loader">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                </div>
             </div>
         </div>
 
@@ -165,7 +182,8 @@
         }
 
         let isFetching = false;
-        let isGlobalMuted = true;
+        let isRendering = false;
+        let isGlobalMuted = true; // මුලින්ම වෙබ් එකට එද්දි Muted (Autoplay සදහා)
         let currentVisibleVideo = null; 
         
         const feedContainer = document.getElementById('video-feed');
@@ -240,6 +258,7 @@
 
                 if (entry.isIntersecting) {
                     currentVisibleVideo = videoElement;
+                    // Fixed: හැමවෙලේම කලින් වීඩියෝ එකේ තෝරපු Mute ස්ටේට් එකම ඊළඟ එකටත් දෙනවා
                     videoElement.muted = isGlobalMuted; 
                     
                     const playPromise = videoElement.play();
@@ -250,18 +269,13 @@
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            // Fixed: Safari එකෙන් force mute කරොත්, බටන් එකේ UI එකත් Mute ස්ටේට් එකට මාරු කරනවා සද්දේ අවුල හැදීමට
-                            videoElement.muted = true;
-                            isGlobalMuted = true;
-                            document.querySelectorAll('.mute-btn').forEach(btn => {
-                                btn.innerHTML = iconMuted;
-                            });
-                            
-                            videoElement.play().then(() => {
-                                if(playBtnOverlay) playBtnOverlay.style.opacity = '0';
-                            }).catch(err => {
-                                if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
-                            });
+                            console.log("Autoplay block protection trigger");
+                            // බ්‍රවුසර් එකෙන් බලෙන් බ්ලොක් කරොත් විතරක් මුලින් muted සෙට් කරලා ප්ලේ කරනවා
+                            if (!videoElement.muted) {
+                                videoElement.muted = true;
+                                videoElement.play().catch(e => console.log(e));
+                            }
+                            if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                         });
                     }
                 } else {
@@ -295,7 +309,6 @@
 
             while (attempts < 5 && !found) {
                 const currentTag = TAGS[currentTagIndex];
-                
                 currentTagIndex = (currentTagIndex + 1) % TAGS.length;
                 if (currentTagIndex === 0) {
                     shuffleArray(TAGS); 
@@ -328,6 +341,8 @@
                     if (validVideos.length > 0) {
                         videoPool.push(validVideos[0]); 
                         found = true;
+                        // වීඩියෝ එකක් පූල් එකට ආපු සැනින් ලෝඩර් එකේ හිරවෙලා ඉන්නවා නම් රෙන්ඩර් එක ට්‍රිගර් කරනවා
+                        requestNextRender();
                     }
                 } catch (e) {
                     console.error("Fetch error, switching tag...");
@@ -350,11 +365,11 @@
             const section = document.createElement('div');
             section.className = "snap-section video-item p-0 md:p-4"; 
             
-            // Fixed: Mute බටන් එකේ blur බැක්ග්‍රවුන්ඩ්, බෝඩර්ස් ඔක්කොම අයින් කරා (නිකන්ම icon එක විතරයි)
+            // Fixed: Mute බටන් එකේ blur, backgrounds, borders සම්පූර්ණයෙන්ම අයින් කරා. drop-shadow එකක් විතරයි තියෙන්නේ.
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
-                    <button class="mute-btn absolute top-6 right-5 p-2.5 z-40 outline-none bg-transparent border-none text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] transition-transform active:scale-95">
+                    <button class="mute-btn absolute top-6 right-5 p-2.5 z-40 outline-none bg-transparent border-none text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)] transition-transform active:scale-95">
                         ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
 
@@ -415,7 +430,8 @@
         }
 
         async function requestNextRender() {
-            if (videoPool.length > 0) {
+            if (videoPool.length > 0 && !isRendering) {
+                isRendering = true;
                 const videoData = videoPool.shift(); 
                 markVideoAsSeen(videoData.id);
                 
@@ -427,10 +443,19 @@
                     bottomLoader.style.display = 'flex'; 
                     bottomLoader.classList.remove('hidden');
                 } else {
+                    // Fixed: පරිශීලකයා ලෝඩර් එක උඩ ඉන්න වෙලාවක වීඩියෝ එක ආවොත්, ලෝඩර් එක අයින් වෙලා සුමටව වීඩියෝ එකට ස්ක්‍රෝල් වෙනවා
+                    const loaderRect = bottomLoader.getBoundingClientRect();
+                    const loaderInView = (loaderRect.top >= 0 && loaderRect.top < window.innerHeight);
+                    
                     feedContainer.insertBefore(section, bottomLoader);
+                    
+                    if (loaderInView) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                    }
                 }
                 
                 videoObserver.observe(section); 
+                isRendering = false;
             }
             fillPoolInBackground();
         }
@@ -438,10 +463,11 @@
         feedContainer.addEventListener('scroll', () => {
             const { scrollTop, scrollHeight, clientHeight } = feedContainer;
             if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
-                requestNextRender();
+                fillPoolInBackground();
             }
         });
 
+        // පළවෙනි පාරට ස්ක්‍රීන් එක ටච් කරපු ගමන් බ්‍රවුසර් එක අන්ලොක් වෙලා වීඩියෝ ඔටෝ ප්ලේ වෙන්න ගන්නවා
         function unlockAutoplay() {
             if (currentVisibleVideo) {
                 currentVisibleVideo.play().catch(e => console.log(e));
