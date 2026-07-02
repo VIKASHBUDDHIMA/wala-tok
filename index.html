@@ -251,12 +251,17 @@
             entries.forEach(entry => {
                 const videoElement = entry.target.querySelector('video');
                 const playBtnOverlay = entry.target.querySelector('.play-btn-overlay');
+                const muteBtn = entry.target.querySelector('.mute-btn');
                 if (!videoElement) return;
 
                 if (entry.isIntersecting) {
                     currentVisibleVideo = videoElement;
                     videoElement.muted = isGlobalMuted; // Sync state
                     
+                    if (muteBtn) {
+                        muteBtn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
+                    }
+
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
@@ -265,18 +270,16 @@
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            // සමහර browsers වල unmute autoplay block වුනොත් ආයෙත් play කරන්න try කරනවා
-                            if (!videoElement.muted) {
+                            // Only force mute if it's strictly a NotAllowedError (Browser Block)
+                            // We ignore AbortError which happens naturally during fast scrolling
+                            if (error.name === 'NotAllowedError') {
                                 videoElement.muted = true;
                                 videoElement.play().then(() => {
-                                    isGlobalMuted = true;
-                                    document.querySelectorAll('.mute-btn').forEach(btn => btn.innerHTML = iconMuted);
+                                    if(muteBtn) muteBtn.innerHTML = iconMuted;
                                     if(playBtnOverlay) playBtnOverlay.style.opacity = '0';
                                 }).catch(e => {
                                     if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                                 });
-                            } else {
-                                if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                             }
                         });
                     }
@@ -342,7 +345,6 @@
                     }));
 
                     if (validVideos.length > 0) {
-                        // FIX: API එකෙන් එන videos සෙට් එකම අරගන්නවා (Black screen issue එක හදන්න)
                         videoPool.push(...validVideos); 
                         found = true;
                     }
@@ -359,7 +361,6 @@
         async function fillPoolInBackground() {
             if (videoPool.length < 5 && !isFetching) {
                 await fetchVideosToPool();
-                // FIX: Recursive call එක අයින් කරා API එක limit වෙන එක නවත්තන්න
             }
         }
 
@@ -367,7 +368,6 @@
             const section = document.createElement('div');
             section.className = "snap-section video-item p-0 md:p-4"; 
             
-            // FIX: <source> tag එක වෙනුවට video එකේ src එකටම URL එක දාලා තියෙන්නේ. එතකොට auto-play ගොඩක් smooth වෙනවා.
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
@@ -400,7 +400,7 @@
             const playBtnOverlay = section.querySelector('.play-btn-overlay');
             const muteBtn = section.querySelector('.mute-btn');
             
-            videoElement.muted = isGlobalMuted; // HTML එකේ දාලා තිබ්බට ආයෙත් JS වලින් අල්ලනවා
+            videoElement.muted = isGlobalMuted; 
 
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
