@@ -38,7 +38,6 @@
             background-color: #000000;
         }
 
-        /* Fixed: ලෝඩින් බාර් එක හිස් තැනට ඇවිත් Snap වෙන්න 100dvh සහ snap-align හැදුවා */
         .bottom-loader-section {
             height: 100dvh;
             width: 100%;
@@ -183,7 +182,7 @@
 
         let isFetching = false;
         let isRendering = false;
-        let isGlobalMuted = true; // මුලින්ම වෙබ් එකට එද්දි Muted (Autoplay සදහා)
+        let isGlobalMuted = true; // මුලින්ම වෙබ් එකට එද්දි Muted 
         let currentVisibleVideo = null; 
         
         const feedContainer = document.getElementById('video-feed');
@@ -258,29 +257,30 @@
 
                 if (entry.isIntersecting) {
                     currentVisibleVideo = videoElement;
-                    // Fixed: හැමවෙලේම කලින් වීඩියෝ එකේ තෝරපු Mute ස්ටේට් එකම ඊළඟ එකටත් දෙනවා
+                    
+                    // වීඩියෝ එකට Global Mute State එක අනිවාර්යයෙන්ම ලබා දෙනවා (බලෙන් Mute කරන්නේ නෑ)
                     videoElement.muted = isGlobalMuted; 
                     
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
+                            // Play වුනා නම් අයිකන් එක හංගනවා
                             if(playBtnOverlay) {
                                 playBtnOverlay.style.opacity = '0';
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            console.log("Autoplay block protection trigger");
-                            // බ්‍රවුසර් එකෙන් බලෙන් බ්ලොක් කරොත් විතරක් මුලින් muted සෙට් කරලා ප්ලේ කරනවා
-                            if (!videoElement.muted) {
-                                videoElement.muted = true;
-                                videoElement.play().catch(e => console.log(e));
-                            }
+                            // බ්‍රවුසර් එකෙන් ප්ලේ වෙන එක Block කරොත් විතරක් Play අයිකන් එක පෙන්වනවා.
+                            // මෙතනදී Auto-Mute කරන්නේ නෑ! ඔයාගේ Unmute State එක එහෙම්මම තියෙනවා.
+                            console.log("Autoplay waiting for interaction");
                             if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
                         });
                     }
                 } else {
                     videoElement.pause();
                     videoElement.currentTime = 0; 
+                    // වීඩියෝ එකෙන් අයින් වෙද්දි Pause අයිකන් එක අයින් කරනවා
+                    if(playBtnOverlay) playBtnOverlay.style.opacity = '0';
                 }
             });
         }, observerOptions);
@@ -341,7 +341,6 @@
                     if (validVideos.length > 0) {
                         videoPool.push(validVideos[0]); 
                         found = true;
-                        // වීඩියෝ එකක් පූල් එකට ආපු සැනින් ලෝඩර් එකේ හිරවෙලා ඉන්නවා නම් රෙන්ඩර් එක ට්‍රිගර් කරනවා
                         requestNextRender();
                     }
                 } catch (e) {
@@ -365,7 +364,6 @@
             const section = document.createElement('div');
             section.className = "snap-section video-item p-0 md:p-4"; 
             
-            // Fixed: Mute බටන් එකේ blur, backgrounds, borders සම්පූර්ණයෙන්ම අයින් කරා. drop-shadow එකක් විතරයි තියෙන්නේ.
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
@@ -400,23 +398,18 @@
             
             videoElement.muted = isGlobalMuted; 
 
+            // වීඩියෝ එක Click කරාම Push (Pause) වෙන ලොජික් එක
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
                     const playPromise = videoElement.play();
                     if (playPromise !== undefined) {
                         playPromise.then(() => {
-                            playBtnOverlay.style.opacity = '1';
-                            playBtnOverlay.classList.add('pop-animation');
-                            setTimeout(() => {
-                                playBtnOverlay.classList.remove('pop-animation');
-                                playBtnOverlay.style.opacity = '0';
-                            }, 200);
+                            playBtnOverlay.style.opacity = '0'; // Play වෙනකොට අයිකන් එක හංගනවා
                         }).catch(e => console.log(e));
                     }
                 } else {
                     videoElement.pause();
-                    playBtnOverlay.classList.remove('pop-animation');
-                    playBtnOverlay.style.opacity = '1';
+                    playBtnOverlay.style.opacity = '1'; // Pause කරාම අයිකන් එක පෙන්වනවා
                     playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                 }
             });
@@ -443,7 +436,6 @@
                     bottomLoader.style.display = 'flex'; 
                     bottomLoader.classList.remove('hidden');
                 } else {
-                    // Fixed: පරිශීලකයා ලෝඩර් එක උඩ ඉන්න වෙලාවක වීඩියෝ එක ආවොත්, ලෝඩර් එක අයින් වෙලා සුමටව වීඩියෝ එකට ස්ක්‍රෝල් වෙනවා
                     const loaderRect = bottomLoader.getBoundingClientRect();
                     const loaderInView = (loaderRect.top >= 0 && loaderRect.top < window.innerHeight);
                     
@@ -467,7 +459,6 @@
             }
         });
 
-        // පළවෙනි පාරට ස්ක්‍රීන් එක ටච් කරපු ගමන් බ්‍රවුසර් එක අන්ලොක් වෙලා වීඩියෝ ඔටෝ ප්ලේ වෙන්න ගන්නවා
         function unlockAutoplay() {
             if (currentVisibleVideo) {
                 currentVisibleVideo.play().catch(e => console.log(e));
