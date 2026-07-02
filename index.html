@@ -49,11 +49,11 @@
             flex-shrink: 0;
         }
 
-        /* --- iOS Safari Native Controls Hide --- */
+        /* --- iOS Safari Native Controls & Play Button Hide --- */
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
-        /* --- අලුත් ලස්සන Wave Loader එක --- */
+        /* --- Wave Loader --- */
         .wave-loader {
             display: inline-flex;
             align-items: center;
@@ -185,7 +185,6 @@
         const feedContainer = document.getElementById('video-feed');
         const bottomLoader = document.getElementById('bottom-loader');
 
-        // Mute & Unmute SVGs
         const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
         const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
 
@@ -265,25 +264,13 @@
                                 playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                             }
                         }).catch(error => {
-                            // Safari Fallback - Force Mute and Play again to prevent freezing
-                            if (!isGlobalMuted) {
-                                isGlobalMuted = true;
-                                document.querySelectorAll('video').forEach(vid => vid.muted = true);
-                                document.querySelectorAll('.mute-btn').forEach(btn => {
-                                    btn.innerHTML = iconMuted;
-                                });
-                                
-                                videoElement.play().then(() => {
-                                    if(playBtnOverlay) {
-                                        playBtnOverlay.style.opacity = '0';
-                                        playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
-                                    }
-                                }).catch(e => {
-                                    if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
-                                });
-                            } else {
+                            // Autoplay block වුනොත් වීඩියෝ එක Mute කරලා Force ප්ලේ කරනවා හිරවීම් නැති කරන්න
+                            videoElement.muted = true;
+                            videoElement.play().then(() => {
+                                if(playBtnOverlay) playBtnOverlay.style.opacity = '0';
+                            }).catch(err => {
                                 if(playBtnOverlay) playBtnOverlay.style.opacity = '1';
-                            }
+                            });
                         });
                     }
                 } else {
@@ -372,6 +359,7 @@
             const section = document.createElement('div');
             section.className = "snap-section video-item p-0 md:p-4"; 
             
+            // Fixed: `src` attribute එක කෙලින්ම <video> එකටම දුන්නා <source> වෙනුවට, preload="metadata" කරලා lag එක නැති කරා
             section.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-black overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
                     
@@ -382,12 +370,11 @@
                     <video 
                         class="w-full h-full object-cover cursor-pointer"
                         loop 
-                        playsinline
+                        playsinline 
                         webkit-playsinline
                         preload="metadata"
-                        ${isGlobalMuted ? 'muted' : ''} 
+                        src="${videoData.playUrl}"
                         poster="${videoData.cover}">
-                        <source src="${videoData.playUrl}" type="video/mp4">
                     </video>
 
                     <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(4px);">
@@ -463,6 +450,17 @@
                 requestNextRender();
             }
         });
+
+        // Mobile Autoplay Restriction එක පළවෙනි Touch එකෙන්ම Unlock කරන්න ග්ලෝබල් ලිස්නර් එකක් දැම්මා
+        function unlockAutoplay() {
+            if (currentVisibleVideo) {
+                currentVisibleVideo.play().catch(e => console.log(e));
+            }
+            document.removeEventListener('touchstart', unlockAutoplay);
+            document.removeEventListener('click', unlockAutoplay);
+        }
+        document.addEventListener('touchstart', unlockAutoplay, { passive: true });
+        document.addEventListener('click', unlockAutoplay, { passive: true });
 
         async function startStream() {
             try {
