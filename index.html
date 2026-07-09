@@ -42,11 +42,13 @@
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
-        /* --- FIRE LOADER ANIMATION (HOT TOK RED THEME) --- */
+        /* --- FIRE LOADER ANIMATION (SMALLER SIZE & RED THEME) --- */
         .fire-wrapper {
             position: relative;
             width: 50px;
             height: 50px;
+            transform: scale(0.5); /* 50% කින් කුඩා කර ඇත */
+            transform-origin: center;
         }
 
         .fire {
@@ -190,7 +192,7 @@
 
         .play-btn-overlay {
             transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
-            pointer-events: none; /* Clicks bypass to video */
+            pointer-events: none; 
         }
         
         .modern-btn {
@@ -206,23 +208,53 @@
             transform: scale(1.05);
         }
         
+        /* --- UIVERSE CUSTOM SEARCH BAR (DARK & RED THEME) --- */
+        .custom-search-input {
+            display: block;
+            color: #ffffff;
+            background: linear-gradient(142.99deg, rgba(30, 30, 35, 0.75) 15.53%, rgba(15, 15, 20, 0.85) 88.19%);
+            box-shadow: 0px 12px 24px -1px rgba(255, 0, 80, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            block-size: 20px;
+            margin: 7px auto;
+            padding: 18px 15px;
+            outline: none;
+            text-align: center;
+            width: 200px;
+            transition: 0.5s;
+            box-sizing: content-box;
+            font-size: 13px;
+        }
+
+        .custom-search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .custom-search-input:hover {
+            width: 240px;
+            border-color: rgba(255, 0, 80, 0.3);
+            box-shadow: 0px 12px 24px -1px rgba(255, 0, 80, 0.25);
+        }
+
+        .custom-search-input:focus {
+            width: 260px;
+            border-color: #ff0050;
+            box-shadow: 0px 12px 24px -1px rgba(255, 0, 80, 0.4);
+        }
+
+        /* Mobile Adjustments for Search Bar */
+        @media (max-width: 768px) {
+            .custom-search-input:focus { width: 230px; }
+            .custom-search-input:hover { width: 230px; }
+        }
+        /* ------------------------------------------- */
+
         .search-panel-glass {
             background: rgba(10, 10, 12, 0.82);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.09);
-        }
-        
-        .search-input {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .search-input:focus {
-            border-color: #ff0050;
-            box-shadow: 0 0 12px rgba(255, 0, 80, 0.25);
-            background: rgba(0, 0, 0, 0.6);
         }
     </style>
 </head>
@@ -234,14 +266,15 @@
         </h1>
     </div>
 
-    <div class="hidden md:block absolute top-24 left-10 z-50 w-72 search-panel-glass p-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
-        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Filter Feed by Tags</div>
-        <div class="flex flex-col gap-2.5 mb-4">
-            <input type="text" id="desktop-search-input" placeholder="e.g. funny, sl, comedy (use spaces)" class="search-input w-full rounded-xl px-3.5 py-2.5 text-xs focus:outline-none placeholder-gray-500">
-            <button onclick="handleSearch('desktop')" class="w-full bg-gradient-to-r from-[#ff0050] to-[#00f2fe] hover:opacity-95 text-white py-2.5 rounded-xl text-xs font-bold tracking-wide shadow-lg transition-all active:scale-[0.98] outline-none">APPLY HASHTAGS</button>
-        </div>
-        <div id="desktop-active-tags" class="flex flex-wrap gap-1.5 mb-2.5 max-h-24 overflow-y-auto"></div>
-        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-full bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] py-2 rounded-xl transition-colors font-semibold border border-white/5 hidden">Reset to Sheet Feed</button>
+    <div class="hidden md:block absolute top-24 left-10 z-50 w-auto search-panel-glass px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center">
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center w-full">Filter Feed by Tags</div>
+        
+        <input type="text" id="desktop-search-input" placeholder="e.g. funny sl dance" class="custom-search-input">
+        
+        <button onclick="handleSearch('desktop')" class="w-[200px] mt-2 bg-gradient-to-r from-[#ff0050] to-[#00f2fe] hover:opacity-95 text-white py-2.5 rounded-full text-xs font-bold tracking-wide shadow-lg transition-all active:scale-[0.98] outline-none">APPLY HASHTAGS</button>
+        
+        <div id="desktop-active-tags" class="flex flex-wrap justify-center gap-1.5 mt-3 max-h-24 overflow-y-auto w-full"></div>
+        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-[200px] mt-2 bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] py-2 rounded-full transition-colors font-semibold border border-white/5 hidden">Reset to Sheet Feed</button>
     </div>
 
     <div class="block md:hidden fixed top-5 left-5 z-50">
@@ -252,23 +285,23 @@
         </button>
     </div>
 
-    <div id="mobile-search-overlay" class="fixed inset-x-0 top-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-start p-6 border-b border-white/10 transition-all duration-300 transform -translate-y-full hidden shadow-[0_25px_5px_rgba(0,0,0,0.9)]">
-        <div class="flex justify-between items-center mb-5">
+    <div id="mobile-search-overlay" class="fixed inset-x-0 top-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-start items-center p-6 border-b border-white/10 transition-all duration-300 transform -translate-y-full hidden shadow-[0_25px_5px_rgba(0,0,0,0.9)]">
+        <div class="flex justify-between items-center w-full mb-4">
             <div>
                 <h2 class="text-md font-black text-white tracking-wide uppercase">Hashtag Filters</h2>
-                <p class="text-[11px] text-gray-400 mt-0.5">Enter multiple tags separated by spaces or commas</p>
             </div>
             <button onclick="toggleMobileSearch(false)" class="text-gray-400 hover:text-white bg-white/5 p-2 rounded-full outline-none">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <div class="flex flex-col gap-3 mb-4">
-            <input type="text" id="mobile-search-input" placeholder="e.g. dance funny srilanka" class="search-input w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none bg-white/5">
-            <button onclick="handleSearch('mobile')" class="w-full bg-gradient-to-r from-[#ff0050] to-[#00f2fe] text-white py-3.5 rounded-xl font-bold text-sm shadow-xl active:scale-[0.98] outline-none">FILTER FEED</button>
-        </div>
-        <div id="mobile-tag-label" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 hidden">Active Filters:</div>
-        <div id="mobile-active-tags" class="flex flex-wrap gap-1.5 mb-4"></div>
-        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-full bg-white/5 text-gray-300 py-3 rounded-xl border border-white/5 font-semibold text-xs hidden">Reset to Default Feed</button>
+        
+        <input type="text" id="mobile-search-input" placeholder="e.g. funny sl dance" class="custom-search-input">
+        
+        <button onclick="handleSearch('mobile')" class="w-[230px] mt-4 bg-gradient-to-r from-[#ff0050] to-[#00f2fe] text-white py-3.5 rounded-full font-bold text-sm shadow-xl active:scale-[0.98] outline-none">FILTER FEED</button>
+        
+        <div id="mobile-tag-label" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-4 mb-1 hidden w-full text-center">Active Filters:</div>
+        <div id="mobile-active-tags" class="flex flex-wrap justify-center gap-1.5 mb-2 w-full"></div>
+        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-[230px] mt-2 bg-white/5 text-gray-300 py-3 rounded-full border border-white/5 font-semibold text-xs hidden">Reset to Default Feed</button>
     </div>
 
     <div class="hidden md:flex absolute right-12 top-1/2 transform -translate-y-1/2 flex-col gap-5 z-40">
@@ -298,7 +331,6 @@
                         <div class="fire-bottom"><div class="main-fire"></div></div>
                     </div>
                 </div>
-                <div class="text-[10px] font-black tracking-widest text-[#ff0050] uppercase mt-2">Loading...</div>
             </div>
         </div>
 
@@ -384,9 +416,7 @@
             });
         }
 
-        // --- PLAY / PAUSE BUTTON OVERLAY LOGIC (FIXED) ---
         globalPlayer.addEventListener('click', () => {
-            // closest() මගින් player එක දැනට තිබෙන නිවැරදි container එක සොයාගනී
             const currentCard = globalPlayer.closest('.video-wrapper'); 
             if (!currentCard) return;
             
@@ -538,7 +568,7 @@
             
             let html = '';
             customTags.forEach(tag => {
-                html += `<span class="bg-white/5 text-[11px] px-2.5 py-1 rounded-md border border-white/10 text-[#00f2fe] font-semibold">#${tag}</span>`;
+                html += `<span class="bg-white/5 text-[11px] px-2.5 py-1 rounded-full border border-white/10 text-[#00f2fe] font-semibold">#${tag}</span>`;
             });
             
             desktopActive.innerHTML = html;
@@ -591,7 +621,6 @@
                                 <div class="fire-bottom"><div class="main-fire"></div></div>
                             </div>
                         </div>
-                        <div class="text-[10px] font-black tracking-widest text-[#ff0050] uppercase mt-2">Loading...</div>
                     </div>
                 `;
                 feedContainer.insertBefore(firstPlaceholder, bottomLoader);
@@ -700,11 +729,12 @@
             
             videoObserver.observe(container);
             
-            // ලෝඩරය වෙත (පහළට) Scroll කරගෙන සිටින විට අලුත් වීඩියෝවක් ආවොත්, සුමටව උඩට ගොස් ඒ අලුත් වීඩියෝව පෙන්වයි
+            // ලෝඩරය වෙත (පහළට) Scroll කරගෙන සිටින විට අලුත් වීඩියෝවක් ආවොත්, 
+            // අනිවාර්යයෙන්ම පහළින් ඉහළට (Bottom-to-Top) scroll වීමට block: 'start' යොදා ඇත.
             const rect = bottomLoader.getBoundingClientRect();
             const isLoaderOnScreen = (rect.top >= 0 && rect.top < window.innerHeight);
             if (isLoaderOnScreen && index > 0) {
-                container.scrollIntoView({ behavior: 'smooth' });
+                container.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
