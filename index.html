@@ -156,7 +156,6 @@
     </div>
 
     <script>
-        // ඔයාගේ API ලින්ක් එක දාගන්න
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
@@ -164,14 +163,13 @@
         let loadedVideosData = []; 
         let currentActiveIndex = 0;
         
-        // අද දවසට අදාලව Local Storage එකෙන් Video History එක ගන්නවා
         let seenData = { date: new Date().toDateString(), ids: [] };
         try {
             const stored = JSON.parse(localStorage.getItem('hotTokSeenData'));
             if (stored && stored.date === new Date().toDateString()) {
-                seenData = stored; // අද දවසේ බැලුව ඒවනම් විතරක් ගන්නවා
+                seenData = stored; 
             } else {
-                localStorage.removeItem('hotTokSeenData'); // වෙන දවසක් නම් අයින් කරනවා
+                localStorage.removeItem('hotTokSeenData'); 
             }
         } catch(e) {}
         
@@ -193,7 +191,6 @@
             return array;
         }
 
-        // අලුත් Video එකක් බැලුවම Data Save කරනවා
         function markVideoAsSeen(id) {
             if (!seenVideoIds.includes(id)) {
                 seenVideoIds.push(id);
@@ -232,7 +229,7 @@
                     </button>
                     <video 
                         class="w-full h-full object-cover cursor-pointer"
-                        loop playsinline webkit-playsinline preload="metadata"
+                        loop playsinline webkit-playsinline preload="auto"
                         src="${videoData.playUrl}" poster="${videoData.cover}">
                     </video>
                     <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 70px; height: 70px; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(4px);">
@@ -269,27 +266,21 @@
             });
         }
 
-        // Lag එක නැති කරන්න Memory හරියට Clear කරනවා
+        // වීඩියෝ Delete කරන්නේ නැහැ, Pause විතරක් කරනවා (Black Screen ප්‍රශ්නය විසඳීම)
         function manageMemory() {
             document.querySelectorAll('.video-wrapper').forEach(container => {
                 let index = parseInt(container.dataset.index);
-                if (Math.abs(index - currentActiveIndex) <= 1) {
-                    renderVideoContent(container, loadedVideosData[index]);
-                } else {
-                    if (container.innerHTML !== '') {
-                        const vid = container.querySelector('video');
-                        if (vid) {
-                            vid.pause();
-                            vid.removeAttribute('src'); // වීඩියෝව සම්පූර්ණයෙන්ම RAM එකෙන් අයින් කරනවා
-                            vid.load();
-                        }
-                        container.innerHTML = ''; 
+                const vid = container.querySelector('video');
+                
+                // දැනට බලන වීඩියෝ එක නෙමෙයි නම් Pause කරනවා
+                if (index !== currentActiveIndex) {
+                    if (vid && !vid.paused) {
+                        vid.pause();
                     }
                 }
             });
         }
 
-        // Auto Play සහ Resume අවුල හරියටම විසඳීම (Promise Catching)
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const container = entry.target;
@@ -303,22 +294,23 @@
                         const muteBtn = container.querySelector('.mute-btn');
 
                         if (videoElement) {
+                            // හැමතිස්සෙම Global State එකට අනුව අලුත් Video එක ලෑස්ති කරනවා
                             videoElement.muted = isGlobalMuted; 
                             
                             const playPromise = videoElement.play();
                             if (playPromise !== undefined) {
                                 playPromise.then(() => {
                                     if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
+                                    if (muteBtn) muteBtn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
                                 }).catch(error => {
-                                    // Browser එක Unmute Video Play කරන්න දුන්නේ නැත්නම් බලෙන් Mute කරලා Play කරනවා (හිරවෙන්නේ නැත)
+                                    // Browser එකෙන් අවහිර කළොත්, මේ Video එක 'විතරක්' බලෙන් Mute කරලා Play කරනවා
+                                    // isGlobalMuted = true කරන්නේ නැහැ! (Auto-play Unmute අවුල විසඳීම)
                                     videoElement.muted = true;
-                                    isGlobalMuted = true;
-                                    if (muteBtn) muteBtn.innerHTML = iconMuted;
                                     
                                     videoElement.play().then(() => {
                                         if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
+                                        if (muteBtn) muteBtn.innerHTML = iconMuted;
                                     }).catch(e => {
-                                        // Still Blocked
                                         if (playBtnOverlay) {
                                             playBtnOverlay.style.opacity = '1';
                                             playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
@@ -328,15 +320,9 @@
                             }
                         }
                     }, 50);
-                } else {
-                    const videoElement = container.querySelector('video');
-                    if (videoElement) {
-                        videoElement.pause();
-                        videoElement.currentTime = 0; // ස්ක්‍රෝල් කරද්දී මුලටම රීසෙට් වෙනවා
-                    }
                 }
             });
-        }, { threshold: 0.7 }); // Threshold එක 0.7 කරලා තියෙන්නේ හරියටම මැදට ආවම Play වෙන්න
+        }, { threshold: 0.7 }); 
 
         async function fetchTagsFromSheet() {
             try {
@@ -379,7 +365,7 @@
                     let validVideos = rawVideos.filter(v => {
                         const id = v.id || v.video_id;
                         const play = v.play || v.wmplay;
-                        return id && play && !seenVideoIds.includes(id); // මෙතනින් Duplicate අයින් කරනවා
+                        return id && play && !seenVideoIds.includes(id); 
                     }).map(v => ({
                         id: v.id || v.video_id,
                         playUrl: v.play || v.wmplay,
@@ -390,7 +376,7 @@
 
                     if (validVideos.length > 0) {
                         const videoData = validVideos[0]; 
-                        markVideoAsSeen(videoData.id); // සේව් කරනවා
+                        markVideoAsSeen(videoData.id); 
                         loadedVideosData.push(videoData);
                         
                         injectNewContainer(loadedVideosData.length - 1);
@@ -422,6 +408,9 @@
 
                 feedContainer.insertBefore(container, bottomLoader);
                 
+                // අලුත් Video එක එනකොට කලින්ම Load වෙන්න renderVideoContent එක Call කරනවා
+                renderVideoContent(container, loadedVideosData[index]);
+
                 if (isLoaderVisible) {
                     container.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
