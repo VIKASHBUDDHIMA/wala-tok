@@ -42,36 +42,157 @@
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
-        /* TikTok විලාසිතාවේ Ultra-Thin සහ Minimalist ලෝඩරය */
-        .neon-progress-track {
-            width: 100px;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 2px;
+        /* --- FIRE LOADER ANIMATION (HOT TOK RED THEME) --- */
+        .fire-wrapper {
             position: relative;
-            overflow: hidden;
-        }
-        
-        .neon-progress-bar {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: -100%;
-            width: 100%;
-            background: linear-gradient(90deg, #ff0050, #00f2fe);
-            animation: scanningLoader 0.9s infinite linear;
+            width: 50px;
+            height: 50px;
         }
 
-        @keyframes scanningLoader {
-            0% { left: -100%; }
-            100% { left: 100%; }
+        .fire {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
         }
+
+        @keyframes scaleUpDown {
+            0%, 100% { transform: scaleY(1) scaleX(1); }
+            50%, 90% { transform: scaleY(1.1); }
+            75% { transform: scaleY(0.95); }
+            80% { transform: scaleX(0.95); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: skewX(0) scale(1); }
+            50% { transform: skewX(5deg) scale(0.9); }
+        }
+
+        @keyframes particleUp {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; top: -100%; transform: scale(0.5); }
+        }
+
+        @keyframes glow {
+            0%, 100% { background-color: #ff0050; }
+            50% { background-color: #ff0050; }
+        }
+
+        .fire-center {
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            animation: scaleUpDown 3s ease-out infinite both;
+        }
+
+        .fire-center .main-fire {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(farthest-corner at 10px 0, #ff0050 0%, #ff0050 95%);
+            transform: scaleX(0.8) rotate(45deg);
+            border-radius: 0 40% 60% 40%;
+            filter: drop-shadow(0 0 10px #ff0050);
+        }
+
+        .fire-center .particle-fire {
+            position: absolute;
+            top: 60%;
+            left: 45%;
+            width: 10px;
+            height: 10px;
+            background-color: #ff0050;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 10px #ff0050);
+            animation: particleUp 2s ease-out infinite both;
+        }
+
+        .fire-right {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            animation: shake 2s ease-out infinite both;
+        }
+
+        .fire-right .main-fire {
+            position: absolute;
+            top: 15%;
+            right: -25%;
+            width: 80%;
+            height: 80%;
+            background-color: #ff0050;
+            transform: scaleX(0.8) rotate(45deg);
+            border-radius: 0 40% 60% 40%;
+            filter: drop-shadow(0 0 10px #ff0050);
+        }
+
+        .fire-right .particle-fire {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            width: 15px;
+            height: 15px;
+            background-color: #ff0050;
+            transform: scaleX(0.8) rotate(45deg);
+            border-radius: 50%;
+            filter: drop-shadow(0 0 10px #ff0050);
+            animation: particleUp 2s ease-out infinite both;
+        }
+
+        .fire-left {
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            animation: shake 3s ease-out infinite both;
+        }
+
+        .fire-left .main-fire {
+            position: absolute;
+            top: 15%;
+            left: -20%;
+            width: 80%;
+            height: 80%;
+            background-color: #ff0050;
+            transform: scaleX(0.8) rotate(45deg);
+            border-radius: 0 40% 60% 40%;
+            filter: drop-shadow(0 0 10px #ff0050);
+        }
+
+        .fire-left .particle-fire {
+            position: absolute;
+            top: 10%;
+            left: 20%;
+            width: 10%;
+            height: 10%;
+            background-color: #ff0050;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 10px #ff0050);
+            animation: particleUp 3s ease-out infinite both;
+        }
+
+        .fire-bottom .main-fire {
+            position: absolute;
+            top: 30%;
+            left: 20%;
+            width: 75%;
+            height: 75%;
+            background-color: #ff0050;
+            transform: scaleX(0.8) rotate(45deg);
+            border-radius: 0 40% 100% 40%;
+            filter: blur(10px);
+            animation: glow 2s ease-out infinite both;
+        }
+        /* ------------------------------------------- */
 
         .play-btn-overlay {
             transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+            pointer-events: none; /* Clicks bypass to video */
         }
         
-        /* Premium Glassmorphic Controls */
         .modern-btn {
             background: rgba(12, 12, 15, 0.65);
             backdrop-filter: blur(14px);
@@ -168,14 +289,29 @@
     <div id="video-feed" class="snap-container relative z-10">
         
         <div id="first-placeholder" class="snap-section video-item p-0 md:p-4">
-            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                <div class="neon-progress-track"><div class="neon-progress-bar"></div></div>
+            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex flex-col justify-center items-center md:border md:border-gray-800 shadow-2xl gap-3">
+                <div class="fire-wrapper">
+                    <div class="fire">
+                        <div class="fire-left"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                        <div class="fire-center"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                        <div class="fire-right"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                        <div class="fire-bottom"><div class="main-fire"></div></div>
+                    </div>
+                </div>
+                <div class="text-[10px] font-black tracking-widest text-[#ff0050] uppercase mt-2">Loading...</div>
             </div>
         </div>
 
-        <div id="bottom-loader" class="hidden relative flex-shrink-0 w-full justify-center items-center z-10" style="height: 20dvh; scroll-snap-align: end;">
-            <div class="w-full h-full md:w-[420px] bg-black flex justify-center items-center md:border-x md:border-b md:border-gray-800 md:rounded-b-[20px]">
-                <div class="neon-progress-track"><div class="neon-progress-bar"></div></div>
+        <div id="bottom-loader" class="hidden relative flex-shrink-0 w-full justify-center items-center z-10" style="height: 30dvh; scroll-snap-align: end;">
+            <div class="w-full h-full md:w-[420px] bg-[#050505] flex flex-col justify-center items-center md:border-x md:border-b md:border-gray-800 md:rounded-b-[20px] border-t border-white/5">
+                <div class="fire-wrapper">
+                    <div class="fire">
+                        <div class="fire-left"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                        <div class="fire-center"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                        <div class="fire-right"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                        <div class="fire-bottom"><div class="main-fire"></div></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -248,9 +384,12 @@
             });
         }
 
+        // --- PLAY / PAUSE BUTTON OVERLAY LOGIC (FIXED) ---
         globalPlayer.addEventListener('click', () => {
-            const currentCard = document.querySelector(`.video-wrapper[data-index="${currentActiveIndex}"]`);
+            // closest() මගින් player එක දැනට තිබෙන නිවැරදි container එක සොයාගනී
+            const currentCard = globalPlayer.closest('.video-wrapper'); 
             if (!currentCard) return;
+            
             const playBtnOverlay = currentCard.querySelector('.play-btn-overlay');
             
             if (globalPlayer.paused) {
@@ -285,7 +424,7 @@
             } else {
                 if (!wasManuallyPaused) {
                     globalPlayer.play().catch(e => console.log(e));
-                    const currentCard = document.querySelector(`.video-wrapper[data-index="${currentActiveIndex}"]`);
+                    const currentCard = globalPlayer.closest('.video-wrapper');
                     if (currentCard) {
                         const playBtnOverlay = currentCard.querySelector('.play-btn-overlay');
                         if (playBtnOverlay && !globalPlayer.paused) playBtnOverlay.style.opacity = '0';
@@ -304,7 +443,7 @@
                         ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
                     
-                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 60px; height: 60px; background: rgba(0,0,0,0.55); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15);">
+                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0" style="width: 60px; height: 60px; background: rgba(0,0,0,0.55); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15);">
                     </div>
                     
                     <div class="absolute bottom-6 left-5 right-16 text-left z-20 drop-shadow-[0_2px_8px_rgba(0,0,0,1)] pointer-events-none">
@@ -443,8 +582,16 @@
                 firstPlaceholder.id = 'first-placeholder';
                 firstPlaceholder.className = "snap-section video-item p-0 md:p-4";
                 firstPlaceholder.innerHTML = `
-                    <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                        <div class="neon-progress-track"><div class="neon-progress-bar"></div></div>
+                    <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex flex-col justify-center items-center md:border md:border-gray-800 shadow-2xl gap-3">
+                        <div class="fire-wrapper">
+                            <div class="fire">
+                                <div class="fire-left"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                                <div class="fire-center"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                                <div class="fire-right"><div class="main-fire"></div><div class="particle-fire"></div></div>
+                                <div class="fire-bottom"><div class="main-fire"></div></div>
+                            </div>
+                        </div>
+                        <div class="text-[10px] font-black tracking-widest text-[#ff0050] uppercase mt-2">Loading...</div>
                     </div>
                 `;
                 feedContainer.insertBefore(firstPlaceholder, bottomLoader);
@@ -553,6 +700,7 @@
             
             videoObserver.observe(container);
             
+            // ලෝඩරය වෙත (පහළට) Scroll කරගෙන සිටින විට අලුත් වීඩියෝවක් ආවොත්, සුමටව උඩට ගොස් ඒ අලුත් වීඩියෝව පෙන්වයි
             const rect = bottomLoader.getBoundingClientRect();
             const isLoaderOnScreen = (rect.top >= 0 && rect.top < window.innerHeight);
             if (isLoaderOnScreen && index > 0) {
