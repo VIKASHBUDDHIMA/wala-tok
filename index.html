@@ -42,50 +42,72 @@
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
-        /* නවීන නියෝන් ලෝඩර් මෝස්තරය */
-        .modern-spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid rgba(255, 255, 255, 0.08);
-            border-radius: 50%;
-            border-top-color: #ff0050;
-            border-right-color: #00f2fe;
-            animation: spin 0.8s infinite linear;
-            box-shadow: 0 0 20px rgba(255, 0, 80, 0.2);
+        /* HOT TOK අනන්‍ය නියෝන් ලීනියර් ලෝඩර් මෝස්තරය */
+        .neon-progress-track {
+            width: 100%;
+            max-w: 240px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.1);
+        }
+        
+        .neon-progress-bar {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -45%;
+            width: 45%;
+            background: linear-gradient(90deg, #ff0050, #00f2fe);
+            border-radius: 10px;
+            animation: scanningLoader 1.2s infinite ease-in-out;
+            box-shadow: 0 0 12px #ff0050, 0 0 4px #00f2fe;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes scanningLoader {
+            0% { left: -45%; width: 35%; }
+            50% { width: 60%; }
+            100% { left: 110%; width: 35%; }
         }
 
         .play-btn-overlay {
             transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
         }
         
+        /* Premium Glassmorphic Control Styles */
         .modern-btn {
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.3s ease;
+            background: rgba(12, 12, 15, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .modern-btn:hover {
-            background: rgba(0, 0, 0, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(20, 20, 25, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             transform: scale(1.05);
         }
         
+        .search-panel-glass {
+            background: rgba(10, 10, 12, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+        }
+        
         .search-input {
-            background: rgba(20, 20, 20, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: white;
             transition: all 0.3s ease;
         }
         .search-input:focus {
             border-color: #ff0050;
-            box-shadow: 0 0 10px rgba(255, 0, 80, 0.3);
-            background: rgba(10, 10, 10, 0.95);
+            box-shadow: 0 0 12px rgba(255, 0, 80, 0.25);
+            background: rgba(0, 0, 0, 0.6);
         }
     </style>
 </head>
@@ -97,47 +119,52 @@
         </h1>
     </div>
 
-    <div class="hidden md:block absolute top-24 left-10 z-50 w-64 bg-[#111111] bg-opacity-75 backdrop-blur-md p-4 rounded-xl border border-gray-800 shadow-2xl">
-        <div class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Search Hashtags</div>
-        <div class="flex gap-2 mb-3">
-            <input type="text" id="desktop-search-input" placeholder="e.g. funny, sl, dance" class="search-input w-full rounded-lg px-3 py-1.5 text-sm focus:outline-none">
-            <button onclick="handleSearch('desktop')" class="bg-[#ff0050] hover:bg-[#d00043] text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors outline-none">Go</button>
+    <div class="hidden md:block absolute top-24 left-10 z-50 w-72 search-panel-glass p-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Filter Feed by Tags</div>
+        <div class="flex flex-col gap-2.5 mb-4">
+            <input type="text" id="desktop-search-input" placeholder="e.g. funny, sl, comedy (use spaces)" class="search-input w-full rounded-xl px-3.5 py-2.5 text-xs focus:outline-none placeholder-gray-500">
+            <button onclick="handleSearch('desktop')" class="w-full bg-gradient-to-r from-[#ff0050] to-[#00f2fe] hover:opacity-95 text-white py-2.5 rounded-xl text-xs font-bold tracking-wide shadow-lg transition-all active:scale-[0.98] outline-none">APPLY HASHTAGS</button>
         </div>
-        <div id="desktop-active-tags" class="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto"></div>
-        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-full bg-gray-900 hover:bg-gray-800 border border-gray-700 text-gray-400 text-[11px] py-1.5 rounded-md transition-colors font-medium hidden">Reset to Sheet Tags</button>
+        <div id="desktop-active-tags" class="flex flex-wrap gap-1.5 mb-2.5 max-h-24 overflow-y-auto"></div>
+        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-full bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] py-2 rounded-xl transition-colors font-semibold border border-white/5 hidden">Reset to Sheet Feed</button>
     </div>
 
-    <div class="block md:hidden absolute top-6 left-5 z-50">
-        <button onclick="toggleMobileSearch(true)" class="modern-btn p-2.5 rounded-full outline-none shadow-lg active:scale-90">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 011-14 0"></path></svg>
+    <div class="block md:hidden fixed top-5 left-5 z-50">
+        <button onclick="toggleMobileSearch(true)" class="modern-btn w-11 h-11 flex items-center justify-center rounded-full outline-none shadow-[0_4px_15px_rgba(0,0,0,0.6)] active:scale-90">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 011-14 0"></path>
+            </svg>
         </button>
     </div>
 
-    <div id="mobile-search-overlay" class="fixed inset-x-0 top-0 z-50 bg-black bg-opacity-95 backdrop-blur-lg flex flex-col justify-start p-6 border-b border-gray-800 transition-all duration-300 transform -translate-y-full hidden">
+    <div id="mobile-search-overlay" class="fixed inset-x-0 top-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-start p-6 border-b border-white/10 transition-all duration-300 transform -translate-y-full hidden shadow-[0_25px_5px_rgba(0,0,0,0.9)]">
         <div class="flex justify-between items-center mb-5">
-            <h2 class="text-lg font-bold text-white tracking-wide">Filter Feed by Tag</h2>
-            <button onclick="toggleMobileSearch(false)" class="text-gray-400 hover:text-white p-1 outline-none">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <div>
+                <h2 class="text-md font-black text-white tracking-wide uppercase">Hashtag Filters</h2>
+                <p class="text-[11px] text-gray-400 mt-0.5">Enter multiple tags separated by spaces or commas</p>
+            </div>
+            <button onclick="toggleMobileSearch(false)" class="text-gray-400 hover:text-white bg-white/5 p-2 rounded-full outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-        <div class="flex gap-2 mb-4">
-            <input type="text" id="mobile-search-input" placeholder="Enter hashtag here..." class="search-input w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none">
-            <button onclick="handleSearch('mobile')" class="bg-[#ff0050] text-white px-5 py-2.5 rounded-xl font-medium text-sm outline-none">Search</button>
+        <div class="flex flex-col gap-3 mb-4">
+            <input type="text" id="mobile-search-input" placeholder="e.g. dance funny srilanka" class="search-input w-full rounded-xl px-4 py-3.5 text-sm focus:outline-none bg-white/5">
+            <button onclick="handleSearch('mobile')" class="w-full bg-gradient-to-r from-[#ff0050] to-[#00f2fe] text-white py-3.5 rounded-xl font-bold text-sm shadow-xl active:scale-[0.98] outline-none">FILTER FEED</button>
         </div>
-        <div id="mobile-tag-label" class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 hidden">Active Filters:</div>
+        <div id="mobile-tag-label" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 hidden">Active Filters:</div>
         <div id="mobile-active-tags" class="flex flex-wrap gap-1.5 mb-4"></div>
-        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-full bg-gray-950 text-gray-400 py-2.5 rounded-xl border border-gray-800 font-medium text-xs hidden">Reset to Default Feed</button>
+        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-full bg-white/5 text-gray-300 py-3 rounded-xl border border-white/5 font-semibold text-xs hidden">Reset to Default Feed</button>
     </div>
 
     <div class="hidden md:flex absolute right-12 top-1/2 transform -translate-y-1/2 flex-col gap-5 z-40">
         <button onclick="scrollFeed(-1)" class="modern-btn p-4 rounded-full group outline-none" title="Previous Video">
-            <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path>
+            <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path>
             </svg>
         </button>
         <button onclick="scrollFeed(1)" class="modern-btn p-4 rounded-full group outline-none" title="Next Video">
-            <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
+            <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
             </svg>
         </button>
     </div>
@@ -147,19 +174,18 @@
     <div id="video-feed" class="snap-container relative z-10">
         
         <div id="first-placeholder" class="snap-section video-item p-0 md:p-4">
-            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                <div class="modern-spinner"></div>
-                <div class="absolute bottom-6 left-4 right-16 text-left z-20 opacity-20">
-                    <div class="w-32 h-4 bg-gray-700 rounded mb-3"></div>
-                    <div class="w-48 h-3 bg-gray-700 rounded"></div>
-                </div>
+            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex flex-col justify-center items-center md:border md:border-gray-800 shadow-2xl gap-4">
+                <div class="text-[11px] font-black tracking-widest text-[#ff0050] uppercase animate-pulse">HOT TOK STREAM</div>
+                <div class="neon-progress-track"><div class="neon-progress-bar"></div></div>
             </div>
         </div>
 
-        <div id="bottom-loader" class="snap-section hidden">
-            <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                <div class="modern-spinner"></div>
+        <div id="bottom-loader" class="hidden relative flex-shrink-0 w-full bg-[#070709] flex flex-col justify-center items-center border-t border-white/5 gap-3" style="height: 30dvh; scroll-snap-align: end;">
+            <div class="text-[10px] font-black tracking-widest text-[#ff0050] uppercase animate-pulse flex items-center gap-2">
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-[#00f2fe] animate-ping"></span>
+                FETCHING NEXT TOK
             </div>
+            <div class="neon-progress-track"><div class="neon-progress-bar"></div></div>
         </div>
 
     </div>
@@ -189,8 +215,8 @@
         const bottomLoader = document.getElementById('bottom-loader');
         const globalPlayer = document.getElementById('global-player');
 
-        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd" /><path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>`;
-        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>`;
+        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L4.5 9H1.5v6h3l4.5 3.75V5.25z" /></svg>`;
+        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>`;
 
         function shuffleArray(array) {
             let arr = [...array];
@@ -216,7 +242,7 @@
             feedContainer.scrollBy({ top: direction * height, behavior: 'smooth' });
         }
 
-        // ආරක්ෂිත යතුරුපුවරු පාලනය (ටයිප් කරන විට ස්ක්‍රෝල් වීම වළක්වයි)
+        // ආරක්ෂිත යතුරුපුවරු පාලනය (සර්ච් බාර් එකේ ටයිප් කරද්දි ස්ක්‍රෝල් වීම වළක්වයි)
         document.addEventListener('keydown', (e) => {
             if (document.activeElement.tagName === 'INPUT') return; 
             
@@ -233,7 +259,7 @@
             });
         }
 
-        // Play/Pause දෘශ්‍ය සංඥා පාලනය (Status Icons Overlay Logic)
+        // Play/Pause Status Indicator Overlay Logic
         globalPlayer.addEventListener('click', () => {
             const currentCard = document.querySelector(`.video-wrapper[data-index="${currentActiveIndex}"]`);
             if (!currentCard) return;
@@ -243,8 +269,7 @@
                 wasManuallyPaused = false;
                 globalPlayer.play().then(() => {
                     if (playBtnOverlay) {
-                        // Play ලකුණ මොහොතකට පෙන්වා මැකී යයි
-                        playBtnOverlay.innerHTML = `<svg fill="#fff" viewBox="0 0 24 24" width="36" height="36" style="margin-left: 4px;"><path d="M8 5v14l11-7z"/></svg>`;
+                        playBtnOverlay.innerHTML = `<svg fill="#fff" viewBox="0 0 24 24" width="32" height="32" style="margin-left: 3px;"><path d="M8 5v14l11-7z"/></svg>`;
                         playBtnOverlay.style.opacity = '1';
                         playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1.1)';
                         setTimeout(() => {
@@ -259,15 +284,14 @@
                 wasManuallyPaused = true;
                 globalPlayer.pause();
                 if (playBtnOverlay) {
-                    // Pause ලකුණ ස්ථාවරව රඳවා ගනී
-                    playBtnOverlay.innerHTML = `<svg fill="#fff" viewBox="0 0 24 24" width="36" height="36"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+                    playBtnOverlay.innerHTML = `<svg fill="#fff" viewBox="0 0 24 24" width="32" height="32"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
                     playBtnOverlay.style.opacity = '1';
                     playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
                 }
             }
         });
 
-        // Page Visibility API (Tab එක මාරු කරද්දී වීඩියෝව ස්වයංක්‍රීයව පෝස්/රෙසියුම් වීම)
+        // Tab Visibility Change Auto-Pause/Resume
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) {
                 globalPlayer.pause();
@@ -285,20 +309,20 @@
 
         function renderVideoCardStructure(container, videoData) {
             container.innerHTML = `
-                <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+                <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_50px_rgba(0,0,0,0.6)]">
                     
                     <div class="video-slot absolute inset-0 z-10 bg-cover bg-center" style="background-image: url('${videoData.cover}');"></div>
                     
-                    <button class="mute-btn absolute top-6 right-5 p-2.5 z-40 outline-none bg-transparent border-none text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)] transition-transform active:scale-95">
+                    <button class="mute-btn absolute top-6 right-5 w-10 h-10 flex items-center justify-center z-40 outline-none rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-lg transition-transform active:scale-95">
                         ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
                     
-                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 65px; height: 65px; background: rgba(0,0,0,0.5); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(4px);">
+                    <div class="play-btn-overlay absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-0" style="width: 60px; height: 60px; background: rgba(0,0,0,0.55); border-radius: 50%; display: flex; justify-content: center; align-items: center; z-30; backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15);">
                     </div>
                     
-                    <div class="absolute bottom-6 left-5 right-16 text-left z-20 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] pointer-events-none">
-                        <h3 class="text-white font-bold text-[16px] mb-1 tracking-wide">@${videoData.author}</h3>
-                        <p class="text-gray-200 text-[13.5px] font-normal leading-snug line-clamp-2">${videoData.title}</p>
+                    <div class="absolute bottom-6 left-5 right-16 text-left z-20 drop-shadow-[0_2px_8px_rgba(0,0,0,1)] pointer-events-none">
+                        <h3 class="text-white font-black text-[15.5px] mb-1 tracking-wide">@${videoData.author}</h3>
+                        <p class="text-gray-200 text-[13px] font-normal leading-relaxed line-clamp-2">${videoData.title}</p>
                     </div>
                 </div>
             `;
@@ -342,7 +366,7 @@
                                     if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
                                 }).catch(error => {
                                     if (playBtnOverlay) {
-                                        playBtnOverlay.innerHTML = `<svg fill="#fff" viewBox="0 0 24 24" width="36" height="36" style="margin-left: 4px;"><path d="M8 5v14l11-7z"/></svg>`;
+                                        playBtnOverlay.innerHTML = `<svg fill="#fff" viewBox="0 0 24 24" width="32" height="32" style="margin-left: 3px;"><path d="M8 5v14l11-7z"/></svg>`;
                                         playBtnOverlay.style.opacity = '1';
                                     }
                                 });
@@ -353,15 +377,15 @@
             });
         }, { threshold: 0.5 }); 
 
-        // Hashtag Filter Logic (සෙවුම් පද්ධතියේ ක්‍රියාකාරීත්වය)
+        // Multi-Hashtag Parsing Logic (කැමති හැෂ්ටැග් ගණනාවක් එකවර ලබාගැනීම)
         function handleSearch(mode) {
             const inputId = mode === 'desktop' ? 'desktop-search-input' : 'mobile-search-input';
             const rawInput = document.getElementById(inputId).value.trim().toLowerCase();
             
             if (!rawInput) return;
             
-            // කොමා (,) මගින් වෙන් කර හැෂ්ටැග් කිහිපයක් වුවද සෙවිය හැක
-            const parsedTags = rawInput.split(',').map(t => t.trim().replace('#', '')).filter(t => t.length > 0);
+            // හිස්තැන් (spaces) හෝ කොමා (,) මඟින් වෙන් කර ඇති සියලුම හැෂ්ටැග් එකවර ලබා ගනී
+            const parsedTags = rawInput.split(/[\s,]+/).map(t => t.trim().replace('#', '')).filter(t => t.length > 0);
             if (parsedTags.length === 0) return;
             
             customTags = parsedTags;
@@ -390,7 +414,7 @@
             
             let html = '';
             customTags.forEach(tag => {
-                html += `<span class="bg-gray-900 text-xs px-2.5 py-1 rounded-md border border-gray-800 text-[#00f2fe] font-medium">#${tag}</span>`;
+                html += `<span class="bg-white/5 text-[11px] px-2.5 py-1 rounded-md border border-white/10 text-[#00f2fe] font-semibold">#${tag}</span>`;
             });
             
             desktopActive.innerHTML = html;
@@ -423,21 +447,20 @@
             globalPlayer.pause();
             globalPlayer.style.display = 'none';
             
-            // පරණ වීඩියෝ කාඩ්පත් ඔක්කොම ඉවත් කරයි
             document.querySelectorAll('.video-wrapper').forEach(w => {
                 videoObserver.unobserve(w);
                 w.remove();
             });
             
-            // මුල් ලෝඩර් ප්ලේස්හෝල්ඩරය නැවත ප්‍රතිෂ්ඨාපනය කරයි
             let firstPlaceholder = document.getElementById('first-placeholder');
             if (!firstPlaceholder) {
                 firstPlaceholder = document.createElement('div');
                 firstPlaceholder.id = 'first-placeholder';
                 firstPlaceholder.className = "snap-section video-item p-0 md:p-4";
                 firstPlaceholder.innerHTML = `
-                    <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-2xl">
-                        <div class="modern-spinner"></div>
+                    <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex flex-col justify-center items-center md:border md:border-gray-800 shadow-2xl gap-4">
+                        <div class="text-[11px] font-black tracking-widest text-[#ff0050] uppercase animate-pulse">HOT TOK STREAM</div>
+                        <div class="neon-progress-track"><div class="neon-progress-bar"></div></div>
                     </div>
                 `;
                 feedContainer.insertBefore(firstPlaceholder, bottomLoader);
@@ -447,7 +470,6 @@
             currentActiveIndex = 0;
             currentTagIndex = 0;
             
-            // සෙවුම් ටැග් තිබේ නම් ඒවාද, නැතහොත් Sheet ටැග් ද ලබා ගනී (සෆල් එක ආරක්ෂිතයි)
             if (customTags.length > 0) {
                 TAGS = shuffleArray(customTags);
             } else {
@@ -547,7 +569,7 @@
             
             videoObserver.observe(container);
             
-            // පරිශීලකයා පල්ලෙහා බලාගෙන සිටී නම් (Loader එක මත ඇත්නම්), අලුත් වීඩියෝවට සුමටව ස්ක්‍රෝල් කරවයි
+            // වීඩියෝව සාර්ථකව බැක්ග්‍රවුන්ඩ් එකෙන් ලෝඩ් වූ පසු, පැරණි වීඩියෝව සහ ලෝඩරය පසෙකලා අලුත් වීඩියෝවට සුමටව ස්ක්‍රෝල් කරවයි
             const rect = bottomLoader.getBoundingClientRect();
             const isLoaderOnScreen = (rect.top >= 0 && rect.top < window.innerHeight);
             if (isLoaderOnScreen && index > 0) {
