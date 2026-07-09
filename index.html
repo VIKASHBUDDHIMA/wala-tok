@@ -76,10 +76,6 @@
         .play-btn-overlay {
             transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
-        .pop-animation {
-            transform: translate(-50%, -50%) scale(1.3) !important;
-            opacity: 0 !important;
-        }
         
         .modern-btn {
             background: rgba(0, 0, 0, 0.4);
@@ -175,6 +171,8 @@
         
         let seenVideoIds = seenData.ids;
         let isFetching = false;
+        
+        // ආරම්භයේදී Mute වෙලා තියෙන්නේ
         let isGlobalMuted = true; 
         
         const feedContainer = document.getElementById('video-feed');
@@ -246,14 +244,15 @@
             const playBtnOverlay = container.querySelector('.play-btn-overlay');
             const muteBtn = container.querySelector('.mute-btn');
             
+            // වීඩියෝව Render වෙද්දීම ඒකේ Mute State එක හරියටම දෙනවා
             videoElement.muted = isGlobalMuted; 
 
+            // Click කරලා Play/Pause කරන Logic එක (හිරවෙන්නේ නැති වෙන්න හැදුවා)
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
-                    // Click කරලා Play කරද්දිත් Auto Sync කරනවා
+                    videoElement.muted = isGlobalMuted; // Play වෙන්න කලින් අනිවාර්යයෙන් දෙනවා
                     videoElement.play().then(() => {
                         playBtnOverlay.style.opacity = '0';
-                        videoElement.muted = isGlobalMuted; 
                     }).catch(e => console.log(e));
                 } else {
                     videoElement.pause();
@@ -295,24 +294,30 @@
 
                         if (videoElement) {
                             
-                            // 1. ඔයාගේ Trick එක: අනිවාර්යයෙන්ම MUTE කරලා Play වෙන්න දෙනවා!
-                            videoElement.muted = true; 
+                            // අතිශය වැදගත්: Play කරන්න කලින්ම Muted ද නැද්ද කියලා තීරණය කරනවා
+                            videoElement.muted = isGlobalMuted; 
                             
                             const playPromise = videoElement.play();
+                            
                             if (playPromise !== undefined) {
                                 playPromise.then(() => {
+                                    // කිසිම අවුලක් නැතුව Play වුණා (Unmuted හෝ Muted)
                                     if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
-                                    
-                                    // 2. Play වුණාට පස්සේ... Script එකෙන්ම Auto-Unmute කරනවා!
-                                    videoElement.muted = isGlobalMuted;
-                                    
-                                    // Button එකේ Icon එකත් හරියටම Update කරනවා
-                                    if (muteBtn) {
-                                        muteBtn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
-                                    }
+                                    if (muteBtn) muteBtn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
                                 }).catch(error => {
-                                    // වේගයෙන් Scroll කරද්දී එන AbortError අදාල කරගන්නේ නෑ, ඒ නිසා Mute වෙවී හිරවෙන්නේ නෑ
-                                    console.log("Play interrupted (Safe):", error.name);
+                                    // Browser එක Unmute එක Block කළොත් විතරක් බලෙන් Mute කරලා Play වෙන්න දෙනවා (හිරවෙන්නේ නෑ)
+                                    videoElement.muted = true;
+                                    
+                                    videoElement.play().then(() => {
+                                        if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
+                                        if (muteBtn) muteBtn.innerHTML = iconMuted;
+                                        // සටහන: මෙතනදි isGlobalMuted එක true කරන්නේ නෑ, එතකොට ඊළඟ වීඩියෝ එකේදිත් Unmute වෙන්නම try කරනවා
+                                    }).catch(e => {
+                                        if (playBtnOverlay) {
+                                            playBtnOverlay.style.opacity = '1';
+                                            playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
+                                        }
+                                    });
                                 });
                             }
                         }
@@ -423,10 +428,11 @@
             }
         });
 
-        // මේ කොටස දැන් අත්‍යාවශ්‍ය නෑ මොකද අපේ Auto-Unmute trick එක තියෙන නිසා, ඒත් Backup එකක් විදියට තියනවා
+        // මුල්ම පාර Click කරාම Browser එකට තේරෙනවා User ඉන්නවා කියලා. එතකොට Autoplay අවහිර කරන්නේ නෑ.
         function unlockAutoplay() {
             const activeContainer = document.querySelector(`.video-wrapper[data-index="${currentActiveIndex}"] video`);
             if (activeContainer && activeContainer.paused) {
+                activeContainer.muted = isGlobalMuted;
                 activeContainer.play().catch(e => console.log(e));
             }
             document.removeEventListener('touchstart', unlockAutoplay);
