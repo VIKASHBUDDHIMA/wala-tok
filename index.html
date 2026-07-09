@@ -38,7 +38,6 @@
             background-color: #000000;
         }
 
-        /* 20%ක් උඩට ගිහින් Loading Bar එක Snap වෙන්න */
         .bottom-loader-section {
             height: 20vh; 
             width: 100%;
@@ -143,10 +142,6 @@
                     <div class="wave-bar"></div>
                     <div class="wave-bar"></div>
                 </div>
-                <div class="absolute bottom-6 left-4 right-16 text-left z-20 opacity-30">
-                    <div class="w-32 h-4 bg-gray-600 rounded mb-3"></div>
-                    <div class="w-48 h-3 bg-gray-600 rounded"></div>
-                </div>
             </div>
         </div>
 
@@ -161,20 +156,26 @@
     </div>
 
     <script>
+        // ඔයාගේ API ලින්ක් එක දාගන්න
         const MY_API_URL = "https://script.google.com/macros/s/AKfycbwkQ155dnHs-NXzPobU6jSG046PuJPQUduqxSRyhXvAjC1mo5X-Ey1JYs9nzmYvf1A7rA/exec"; 
         
         let TAGS = []; 
         let currentTagIndex = 0;
         let loadedVideosData = []; 
-        let currentActiveIndex = 0; // දැනට බලන වීඩියෝ එකේ අංකය
+        let currentActiveIndex = 0;
         
-        let seenVideoIds = [];
+        // අද දවසට අදාලව Local Storage එකෙන් Video History එක ගන්නවා
+        let seenData = { date: new Date().toDateString(), ids: [] };
         try {
-            seenVideoIds = JSON.parse(localStorage.getItem('hotTokSeenVideos')) || [];
-        } catch(e) {
-            seenVideoIds = [];
-        }
-
+            const stored = JSON.parse(localStorage.getItem('hotTokSeenData'));
+            if (stored && stored.date === new Date().toDateString()) {
+                seenData = stored; // අද දවසේ බැලුව ඒවනම් විතරක් ගන්නවා
+            } else {
+                localStorage.removeItem('hotTokSeenData'); // වෙන දවසක් නම් අයින් කරනවා
+            }
+        } catch(e) {}
+        
+        let seenVideoIds = seenData.ids;
         let isFetching = false;
         let isGlobalMuted = true; 
         
@@ -192,11 +193,13 @@
             return array;
         }
 
+        // අලුත් Video එකක් බැලුවම Data Save කරනවා
         function markVideoAsSeen(id) {
             if (!seenVideoIds.includes(id)) {
                 seenVideoIds.push(id);
                 if (seenVideoIds.length > 800) { seenVideoIds.shift(); }
-                localStorage.setItem('hotTokSeenVideos', JSON.stringify(seenVideoIds));
+                seenData.ids = seenVideoIds;
+                localStorage.setItem('hotTokSeenData', JSON.stringify(seenData));
             }
         }
 
@@ -211,7 +214,6 @@
             else if (e.key.toLowerCase() === 'm') { toggleGlobalMute(); }
         });
 
-        // Mute Toggle - මේකෙන් පස්සේ ආයේ Autoplay Mute කරන්නේ නෑ
         function toggleGlobalMute() {
             isGlobalMuted = !isGlobalMuted;
             document.querySelectorAll('video').forEach(vid => vid.muted = isGlobalMuted);
@@ -220,10 +222,8 @@
             });
         }
 
-        // --- DOM RECYCLING & MEMORY MANAGEMENT (3 Video Tags) ---
-        // Container එක ඇතුලට Video එක දානවා
         function renderVideoContent(container, videoData) {
-            if (container.innerHTML !== '') return; // දැනටමත් තියෙනවනම් අතාරිනවා
+            if (container.innerHTML !== '') return; 
             
             container.innerHTML = `
                 <div class="relative w-full h-[100dvh] md:w-[420px] md:h-[94vh] md:rounded-[20px] bg-[#050505] overflow-hidden flex justify-center items-center md:border md:border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
@@ -269,59 +269,81 @@
             });
         }
 
-        // Memory එක බේරගන්න බලන්නේ නැති Containers හිස් කරනවා
+        // Lag එක නැති කරන්න Memory හරියට Clear කරනවා
         function manageMemory() {
             document.querySelectorAll('.video-wrapper').forEach(container => {
                 let index = parseInt(container.dataset.index);
-                // ප්ලේ වෙන එක, උඩ එක සහ යට එක විතරයි DOM එකේ තියාගන්නේ (Tags 3යි)
                 if (Math.abs(index - currentActiveIndex) <= 1) {
                     renderVideoContent(container, loadedVideosData[index]);
                 } else {
-                    // අනිත් ඒවායේ HTML අයින් කරනවා ලැග් වෙන එක නවත්වන්න (Layout එක කැඩෙන්නේ නෑ)
                     if (container.innerHTML !== '') {
+                        const vid = container.querySelector('video');
+                        if (vid) {
+                            vid.pause();
+                            vid.removeAttribute('src'); // වීඩියෝව සම්පූර්ණයෙන්ම RAM එකෙන් අයින් කරනවා
+                            vid.load();
+                        }
                         container.innerHTML = ''; 
                     }
                 }
             });
         }
 
+        // Auto Play සහ Resume අවුල හරියටම විසඳීම (Promise Catching)
         const videoObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const container = entry.target;
                 if (entry.isIntersecting) {
                     currentActiveIndex = parseInt(container.dataset.index);
-                    manageMemory(); // මතකය කළමනාකරණය කරනවා
+                    manageMemory(); 
                     
                     setTimeout(() => {
                         const videoElement = container.querySelector('video');
                         const playBtnOverlay = container.querySelector('.play-btn-overlay');
+                        const muteBtn = container.querySelector('.mute-btn');
+
                         if (videoElement) {
                             videoElement.muted = isGlobalMuted; 
-                            videoElement.play().then(() => {
-                                if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
-                            }).catch(error => {
-                                // Safari Block කරොත් Play Button පෙන්වනවා විතරයි, බලෙන් Mute කරන්නේ නෑ!
-                                if (playBtnOverlay) {
-                                    playBtnOverlay.style.opacity = '1';
-                                    playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
-                                }
-                            });
+                            
+                            const playPromise = videoElement.play();
+                            if (playPromise !== undefined) {
+                                playPromise.then(() => {
+                                    if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
+                                }).catch(error => {
+                                    // Browser එක Unmute Video Play කරන්න දුන්නේ නැත්නම් බලෙන් Mute කරලා Play කරනවා (හිරවෙන්නේ නැත)
+                                    videoElement.muted = true;
+                                    isGlobalMuted = true;
+                                    if (muteBtn) muteBtn.innerHTML = iconMuted;
+                                    
+                                    videoElement.play().then(() => {
+                                        if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
+                                    }).catch(e => {
+                                        // Still Blocked
+                                        if (playBtnOverlay) {
+                                            playBtnOverlay.style.opacity = '1';
+                                            playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
+                                        }
+                                    });
+                                });
+                            }
                         }
                     }, 50);
                 } else {
                     const videoElement = container.querySelector('video');
-                    if (videoElement) videoElement.pause();
+                    if (videoElement) {
+                        videoElement.pause();
+                        videoElement.currentTime = 0; // ස්ක්‍රෝල් කරද්දී මුලටම රීසෙට් වෙනවා
+                    }
                 }
             });
-        }, { threshold: 0.6 }); // 60% ක් පෙනෙද්දී Active වෙනවා
+        }, { threshold: 0.7 }); // Threshold එක 0.7 කරලා තියෙන්නේ හරියටම මැදට ආවම Play වෙන්න
 
-        // API Fetching & Tag Shuffling
         async function fetchTagsFromSheet() {
             try {
                 const response = await fetch(`${MY_API_URL}?action=get_tags`);
                 const json = await response.json();
                 if (json.tags && Array.isArray(json.tags) && json.tags.length > 0) {
-                    TAGS = shuffleArray(json.tags); // Tag ලිස්ට් එක මුලින්ම කුඩු වෙන්න ෂෆල් කරනවා
+                    TAGS = shuffleArray(json.tags); 
                 } else {
                     TAGS = ["srilanka"]; 
                 }
@@ -357,7 +379,7 @@
                     let validVideos = rawVideos.filter(v => {
                         const id = v.id || v.video_id;
                         const play = v.play || v.wmplay;
-                        return id && play && !seenVideoIds.includes(id);
+                        return id && play && !seenVideoIds.includes(id); // මෙතනින් Duplicate අයින් කරනවා
                     }).map(v => ({
                         id: v.id || v.video_id,
                         playUrl: v.play || v.wmplay,
@@ -368,7 +390,7 @@
 
                     if (validVideos.length > 0) {
                         const videoData = validVideos[0]; 
-                        markVideoAsSeen(videoData.id);
+                        markVideoAsSeen(videoData.id); // සේව් කරනවා
                         loadedVideosData.push(videoData);
                         
                         injectNewContainer(loadedVideosData.length - 1);
@@ -383,7 +405,6 @@
             isFetching = false;
         }
 
-        // DOM එකට අලුත් Container එකක් දානවා (Smooth Scroll Logic එක්ක)
         function injectNewContainer(index) {
             const container = document.createElement('div');
             container.className = "snap-section video-wrapper p-0 md:p-4"; 
@@ -391,13 +412,11 @@
             
             const firstPlaceholder = document.getElementById('first-placeholder');
             if (firstPlaceholder) {
-                // මුල්ම වීඩියෝ එක නම්, Gray Placeholder එක අයින් කරලා ඒ වෙනුවට දානවා
                 renderVideoContent(container, loadedVideosData[index]);
                 firstPlaceholder.replaceWith(container);
                 bottomLoader.classList.remove('hidden');
                 bottomLoader.style.display = 'flex';
             } else {
-                // Loader එක දිහා බලන් ඉද්දි වීඩියෝ එක ආවොත්, ඒක උඩට Smoothly Scroll කරනවා
                 const loaderRect = bottomLoader.getBoundingClientRect();
                 const isLoaderVisible = (loaderRect.top < window.innerHeight && loaderRect.bottom >= 0);
 
@@ -419,7 +438,6 @@
             }
         });
 
-        // පළවෙනි Interaction එකෙන් Autoplay Unlock කරනවා
         function unlockAutoplay() {
             const activeContainer = document.querySelector(`.video-wrapper[data-index="${currentActiveIndex}"] video`);
             if (activeContainer) activeContainer.play().catch(e => console.log(e));
@@ -436,11 +454,11 @@
                 await fetchNextVideo(); 
                 if (loadedVideosData.length === 0) {
                     seenVideoIds = [];
-                    localStorage.removeItem('hotTokSeenVideos');
+                    seenData.ids = [];
+                    localStorage.removeItem('hotTokSeenData');
                     await fetchNextVideo();
                 }
                 
-                // යටින් තව වීඩියෝ 2ක් ලෝඩ් කරලා තියාගන්නවා හිරවීමක් නැතුව ස්ක්‍රෝල් වෙන්න
                 await fetchNextVideo(); 
                 await fetchNextVideo();
                 
@@ -450,7 +468,6 @@
         }
 
         window.onload = startStream;
-
     </script>
 </body>
 </html>
