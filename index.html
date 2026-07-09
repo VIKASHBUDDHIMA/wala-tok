@@ -250,8 +250,10 @@
 
             videoElement.addEventListener('click', () => {
                 if (videoElement.paused) {
+                    // Click කරලා Play කරද්දිත් Auto Sync කරනවා
                     videoElement.play().then(() => {
                         playBtnOverlay.style.opacity = '0';
+                        videoElement.muted = isGlobalMuted; 
                     }).catch(e => console.log(e));
                 } else {
                     videoElement.pause();
@@ -266,13 +268,11 @@
             });
         }
 
-        // වීඩියෝ Delete කරන්නේ නැහැ, Pause විතරක් කරනවා (Black Screen ප්‍රශ්නය විසඳීම)
         function manageMemory() {
             document.querySelectorAll('.video-wrapper').forEach(container => {
                 let index = parseInt(container.dataset.index);
                 const vid = container.querySelector('video');
                 
-                // දැනට බලන වීඩියෝ එක නෙමෙයි නම් Pause කරනවා
                 if (index !== currentActiveIndex) {
                     if (vid && !vid.paused) {
                         vid.pause();
@@ -294,28 +294,25 @@
                         const muteBtn = container.querySelector('.mute-btn');
 
                         if (videoElement) {
-                            // හැමතිස්සෙම Global State එකට අනුව අලුත් Video එක ලෑස්ති කරනවා
-                            videoElement.muted = isGlobalMuted; 
+                            
+                            // 1. ඔයාගේ Trick එක: අනිවාර්යයෙන්ම MUTE කරලා Play වෙන්න දෙනවා!
+                            videoElement.muted = true; 
                             
                             const playPromise = videoElement.play();
                             if (playPromise !== undefined) {
                                 playPromise.then(() => {
                                     if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
-                                    if (muteBtn) muteBtn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
-                                }).catch(error => {
-                                    // Browser එකෙන් අවහිර කළොත්, මේ Video එක 'විතරක්' බලෙන් Mute කරලා Play කරනවා
-                                    // isGlobalMuted = true කරන්නේ නැහැ! (Auto-play Unmute අවුල විසඳීම)
-                                    videoElement.muted = true;
                                     
-                                    videoElement.play().then(() => {
-                                        if (playBtnOverlay) playBtnOverlay.style.opacity = '0';
-                                        if (muteBtn) muteBtn.innerHTML = iconMuted;
-                                    }).catch(e => {
-                                        if (playBtnOverlay) {
-                                            playBtnOverlay.style.opacity = '1';
-                                            playBtnOverlay.style.transform = 'translate(-50%, -50%) scale(1)';
-                                        }
-                                    });
+                                    // 2. Play වුණාට පස්සේ... Script එකෙන්ම Auto-Unmute කරනවා!
+                                    videoElement.muted = isGlobalMuted;
+                                    
+                                    // Button එකේ Icon එකත් හරියටම Update කරනවා
+                                    if (muteBtn) {
+                                        muteBtn.innerHTML = isGlobalMuted ? iconMuted : iconUnmuted;
+                                    }
+                                }).catch(error => {
+                                    // වේගයෙන් Scroll කරද්දී එන AbortError අදාල කරගන්නේ නෑ, ඒ නිසා Mute වෙවී හිරවෙන්නේ නෑ
+                                    console.log("Play interrupted (Safe):", error.name);
                                 });
                             }
                         }
@@ -408,7 +405,6 @@
 
                 feedContainer.insertBefore(container, bottomLoader);
                 
-                // අලුත් Video එක එනකොට කලින්ම Load වෙන්න renderVideoContent එක Call කරනවා
                 renderVideoContent(container, loadedVideosData[index]);
 
                 if (isLoaderVisible) {
@@ -427,9 +423,12 @@
             }
         });
 
+        // මේ කොටස දැන් අත්‍යාවශ්‍ය නෑ මොකද අපේ Auto-Unmute trick එක තියෙන නිසා, ඒත් Backup එකක් විදියට තියනවා
         function unlockAutoplay() {
             const activeContainer = document.querySelector(`.video-wrapper[data-index="${currentActiveIndex}"] video`);
-            if (activeContainer) activeContainer.play().catch(e => console.log(e));
+            if (activeContainer && activeContainer.paused) {
+                activeContainer.play().catch(e => console.log(e));
+            }
             document.removeEventListener('touchstart', unlockAutoplay);
             document.removeEventListener('click', unlockAutoplay);
         }
