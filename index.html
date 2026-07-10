@@ -42,7 +42,7 @@
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
-        /* --- FIRE LOADER ANIMATION (50% SMALLER SIZE) --- */
+        /* --- FIRE LOADER ANIMATION --- */
         .fire-wrapper {
             position: relative;
             width: 50px;
@@ -66,136 +66,40 @@
             75% { transform: scaleY(0.95); }
             80% { transform: scaleX(0.95); }
         }
-
         @keyframes shake {
             0%, 100% { transform: skewX(0) scale(1); }
             50% { transform: skewX(5deg) scale(0.9); }
         }
-
         @keyframes particleUp {
             0% { opacity: 0; }
             20% { opacity: 1; }
             80% { opacity: 1; }
             100% { opacity: 0; top: -100%; transform: scale(0.5); }
         }
-
         @keyframes glow {
             0%, 100% { background-color: #ff0050; }
             50% { background-color: #ff0050; }
         }
 
-        .fire-center {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            animation: scaleUpDown 3s ease-out infinite both;
-        }
+        .fire-center { position: absolute; height: 100%; width: 100%; animation: scaleUpDown 3s ease-out infinite both; }
+        .fire-center .main-fire { position: absolute; width: 100%; height: 100%; background-image: radial-gradient(farthest-corner at 10px 0, #ff0050 0%, #ff0050 95%); transform: scaleX(0.8) rotate(45deg); border-radius: 0 40% 60% 40%; filter: drop-shadow(0 0 10px #ff0050); }
+        .fire-center .particle-fire { position: absolute; top: 60%; left: 45%; width: 10px; height: 10px; background-color: #ff0050; border-radius: 50%; filter: drop-shadow(0 0 10px #ff0050); animation: particleUp 2s ease-out infinite both; }
 
-        .fire-center .main-fire {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background-image: radial-gradient(farthest-corner at 10px 0, #ff0050 0%, #ff0050 95%);
-            transform: scaleX(0.8) rotate(45deg);
-            border-radius: 0 40% 60% 40%;
-            filter: drop-shadow(0 0 10px #ff0050);
-        }
+        .fire-right { height: 100%; width: 100%; position: absolute; animation: shake 2s ease-out infinite both; }
+        .fire-right .main-fire { position: absolute; top: 15%; right: -25%; width: 80%; height: 80%; background-color: #ff0050; transform: scaleX(0.8) rotate(45deg); border-radius: 0 40% 60% 40%; filter: drop-shadow(0 0 10px #ff0050); }
+        .fire-right .particle-fire { position: absolute; top: 45%; left: 50%; width: 15px; height: 15px; background-color: #ff0050; transform: scaleX(0.8) rotate(45deg); border-radius: 50%; filter: drop-shadow(0 0 10px #ff0050); animation: particleUp 2s ease-out infinite both; }
 
-        .fire-center .particle-fire {
-            position: absolute;
-            top: 60%;
-            left: 45%;
-            width: 10px;
-            height: 10px;
-            background-color: #ff0050;
-            border-radius: 50%;
-            filter: drop-shadow(0 0 10px #ff0050);
-            animation: particleUp 2s ease-out infinite both;
-        }
+        .fire-left { position: absolute; height: 100%; width: 100%; animation: shake 3s ease-out infinite both; }
+        .fire-left .main-fire { position: absolute; top: 15%; left: -20%; width: 80%; height: 80%; background-color: #ff0050; transform: scaleX(0.8) rotate(45deg); border-radius: 0 40% 60% 40%; filter: drop-shadow(0 0 10px #ff0050); }
+        .fire-left .particle-fire { position: absolute; top: 10%; left: 20%; width: 10%; height: 10%; background-color: #ff0050; border-radius: 50%; filter: drop-shadow(0 0 10px #ff0050); animation: particleUp 3s ease-out infinite both; }
 
-        .fire-right {
-            height: 100%;
-            width: 100%;
-            position: absolute;
-            animation: shake 2s ease-out infinite both;
-        }
-
-        .fire-right .main-fire {
-            position: absolute;
-            top: 15%;
-            right: -25%;
-            width: 80%;
-            height: 80%;
-            background-color: #ff0050;
-            transform: scaleX(0.8) rotate(45deg);
-            border-radius: 0 40% 60% 40%;
-            filter: drop-shadow(0 0 10px #ff0050);
-        }
-
-        .fire-right .particle-fire {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            width: 15px;
-            height: 15px;
-            background-color: #ff0050;
-            transform: scaleX(0.8) rotate(45deg);
-            border-radius: 50%;
-            filter: drop-shadow(0 0 10px #ff0050);
-            animation: particleUp 2s ease-out infinite both;
-        }
-
-        .fire-left {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            animation: shake 3s ease-out infinite both;
-        }
-
-        .fire-left .main-fire {
-            position: absolute;
-            top: 15%;
-            left: -20%;
-            width: 80%;
-            height: 80%;
-            background-color: #ff0050;
-            transform: scaleX(0.8) rotate(45deg);
-            border-radius: 0 40% 60% 40%;
-            filter: drop-shadow(0 0 10px #ff0050);
-        }
-
-        .fire-left .particle-fire {
-            position: absolute;
-            top: 10%;
-            left: 20%;
-            width: 10%;
-            height: 10%;
-            background-color: #ff0050;
-            border-radius: 50%;
-            filter: drop-shadow(0 0 10px #ff0050);
-            animation: particleUp 3s ease-out infinite both;
-        }
-
-        .fire-bottom .main-fire {
-            position: absolute;
-            top: 30%;
-            left: 20%;
-            width: 75%;
-            height: 75%;
-            background-color: #ff0050;
-            transform: scaleX(0.8) rotate(45deg);
-            border-radius: 0 40% 100% 40%;
-            filter: blur(10px);
-            animation: glow 2s ease-out infinite both;
-        }
-        /* ------------------------------------------- */
+        .fire-bottom .main-fire { position: absolute; top: 30%; left: 20%; width: 75%; height: 75%; background-color: #ff0050; transform: scaleX(0.8) rotate(45deg); border-radius: 0 40% 100% 40%; filter: blur(10px); animation: glow 2s ease-out infinite both; }
 
         .play-btn-overlay {
             transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
             pointer-events: none; 
         }
         
-        /* Desktop Button UI */
         .modern-btn {
             background: rgba(12, 12, 15, 0.65);
             backdrop-filter: blur(14px);
@@ -209,49 +113,6 @@
             transform: scale(1.05);
         }
 
-        /* --- NEW UIVERSE SEARCH BAR STYLING (GARERIM STYLE - DARK TRANSFORMATION) --- */
-        .container-input {
-            position: relative;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        .custom-input-bar {
-            width: 160px;
-            padding: 11px 15px 11px 42px;
-            border-radius: 9999px;
-            border: solid 1px rgba(255, 255, 255, 0.15);
-            background: rgba(25px, 25px, 30px, 0.8);
-            color: #ffffff;
-            transition: all .3s ease-in-out;
-            outline: none;
-            opacity: 0.85;
-            font-size: 13.5px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-        }
-
-        .container-input svg {
-            position: absolute;
-            top: 50%;
-            left: 15px;
-            transform: translate(0, -50%);
-            fill: rgba(255, 255, 255, 0.5);
-            transition: all 0.3s ease-in-out;
-        }
-
-        .custom-input-bar:focus {
-            opacity: 1;
-            width: 240px;
-            border-color: #ff0050;
-            box-shadow: 0 0 18px rgba(255, 0, 80, 0.35);
-        }
-
-        .custom-input-bar:focus + svg {
-            fill: #ff0050;
-            transform: translate(0, -50%) scale(1.1);
-        }
-
         .search-panel-glass {
             background: rgba(10, 10, 12, 0.85);
             backdrop-filter: blur(20px);
@@ -259,32 +120,9 @@
             border: 1px solid rgba(255, 255, 255, 0.09);
         }
 
-        /* --- MOBILE OVERRIDES: REMOVE BLUR & BACKGROUND FROM INTERACTION BUTTONS --- */
         @media (max-width: 768px) {
-            .mobile-search-trigger {
-                background: transparent !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                width: auto !important;
-                height: auto !important;
-            }
-            .mute-btn {
-                background: transparent !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                border: none !important;
-                box-shadow: none !important;
-                width: auto !important;
-                height: auto !important;
-                top: 24px !important;
-                right: 24px !important;
-            }
-            .custom-input-bar:focus {
-                width: 210px;
-            }
+            .mobile-search-trigger { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: none !important; box-shadow: none !important; padding: 0 !important; width: auto !important; height: auto !important; }
+            .mute-btn { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border: none !important; box-shadow: none !important; width: auto !important; height: auto !important; top: 24px !important; right: 24px !important; }
         }
     </style>
 </head>
@@ -296,25 +134,29 @@
         </h1>
     </div>
 
-    <div class="hidden md:block absolute top-24 left-10 z-50 w-auto search-panel-glass px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center">
-        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center w-full">Filter Feed by Tags</div>
+    <div class="hidden md:flex absolute top-24 left-10 z-50 w-auto search-panel-glass px-5 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex-col items-center min-w-[280px]">
         
-        <div class="container-input">
-            <input type="text" id="desktop-search-input" placeholder="Search hashtags" class="custom-input-bar" onkeydown="if(event.key === 'Enter') handleSearch('desktop')">
-            <svg width="18px" height="18px" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
-                <path d="M790.588 1468.235c-373.722 0-677.647-303.924-677.647-677.647 0-373.722 303.925-677.647 677.647-677.647 373.723 0 677.647 303.925 677.647 677.647 0 373.723-303.924 677.647-677.647 677.647Zm596.781-160.715c120.396-138.692 193.807-319.285 193.807-516.932C1581.176 354.748 1226.428 0 790.588 0S0 354.748 0 790.588s354.748 790.588 790.588 790.588c197.647 0 378.24-73.411 516.932-193.807l516.028 516.142 79.963-79.963-516.142-516.028Z" fill-rule="evenodd"></path>
+        <div class="relative flex items-center w-full transition-all duration-300 group">
+            <svg class="absolute left-3.5 w-[18px] h-[18px] text-gray-500 group-focus-within:text-[#ff0050] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 011-14 0"></path>
             </svg>
+            <input type="text" id="desktop-search-input" placeholder="Search hashtags..." class="w-full bg-[#f4f4f4] text-black pl-10 pr-12 py-3 rounded-full outline-none text-[14px] font-bold shadow-[0_4px_15px_rgba(0,0,0,0.2)] placeholder-gray-500 border-2 border-transparent focus:border-[#ff0050] transition-all" onkeydown="if(event.key === 'Enter') handleSearch('desktop')">
+            <button onclick="handleSearch('desktop')" class="absolute right-1.5 bg-[#ff0050] hover:bg-[#ff2a6d] w-9 h-9 rounded-full flex items-center justify-center text-white transition-transform active:scale-90 shadow-md outline-none">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
         </div>
         
-        <button onclick="handleSearch('desktop')" class="w-full mt-4 bg-gradient-to-r from-[#ff0050] to-[#ff2a6d] hover:brightness-110 text-white py-2.5 rounded-full text-xs font-black tracking-wider shadow-[0_4px_15px_rgba(255,0,80,0.3)] transition-all active:scale-[0.98] outline-none">SEARCH NOW</button>
-        
-        <div id="desktop-active-tags" class="flex flex-wrap justify-center gap-1.5 mt-3 max-h-24 overflow-y-auto w-full"></div>
-        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-full mt-2 bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] py-2 rounded-full transition-colors font-semibold border border-white/5 hidden">Reset to Sheet Feed</button>
+        <div class="flex items-start justify-between w-full mt-3 gap-2">
+            <div id="desktop-active-tags" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto flex-1"></div>
+            <button onclick="resetSearch()" id="desktop-reset-btn" class="hidden flex-shrink-0 bg-white/10 hover:bg-[#ff0050] p-1.5 rounded-full text-gray-300 hover:text-white transition-colors outline-none" title="Reset Filters">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+        </div>
     </div>
 
     <div id="mobile-search-trigger-btn" class="block md:hidden fixed top-6 left-6 z-50 hidden">
         <button onclick="toggleMobileSearch(true)" class="modern-btn mobile-search-trigger outline-none active:scale-90 flex items-center justify-center">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="6" stroke-linecap="round" stroke-linejoin="round"></circle>
                 <line x1="16" y1="16" x2="22" y2="22" stroke-linecap="round" stroke-linejoin="round"></line>
             </svg>
@@ -323,38 +165,34 @@
 
     <div id="mobile-search-overlay" class="fixed inset-x-0 top-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-start items-center p-6 border-b border-white/10 transition-all duration-300 transform -translate-y-full hidden shadow-[0_25px_5px_rgba(0,0,0,0.9)]">
         <div class="flex justify-between items-center w-full mb-5">
-            <div>
-                <h2 class="text-md font-black text-white tracking-wide uppercase">Hashtag Filters</h2>
-            </div>
+            <h2 class="text-md font-black text-white tracking-wide uppercase">Hashtag Filters</h2>
             <button onclick="toggleMobileSearch(false)" class="text-gray-400 hover:text-white bg-white/5 p-2 rounded-full outline-none">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
         
-        <div class="container-input">
-            <input type="text" id="mobile-search-input" placeholder="Search hashtags" class="custom-input-bar" onkeydown="if(event.key === 'Enter') handleSearch('mobile')">
-            <svg width="18px" height="18px" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
-                <path d="M790.588 1468.235c-373.722 0-677.647-303.924-677.647-677.647 0-373.722 303.925-677.647 677.647-677.647 373.723 0 677.647 303.925 677.647 677.647 0 373.723-303.924 677.647-677.647 677.647Zm596.781-160.715c120.396-138.692 193.807-319.285 193.807-516.932C1581.176 354.748 1226.428 0 790.588 0S0 354.748 0 790.588s354.748 790.588 790.588 790.588c197.647 0 378.24-73.411 516.932-193.807l516.028 516.142 79.963-79.963-516.142-516.028Z" fill-rule="evenodd"></path>
-            </svg>
+        <div class="relative flex items-center w-full max-w-[300px] transition-all duration-300 group">
+            <svg class="absolute left-4 w-[18px] h-[18px] text-gray-500 group-focus-within:text-[#ff0050] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 011-14 0"></path></svg>
+            <input type="text" id="mobile-search-input" placeholder="Search hashtags..." class="w-full bg-[#f4f4f4] text-black pl-11 pr-14 py-3.5 rounded-full outline-none text-[15px] font-bold shadow-lg placeholder-gray-500 border-2 border-transparent focus:border-[#ff0050] transition-all" onkeydown="if(event.key === 'Enter') handleSearch('mobile')">
+            <button onclick="handleSearch('mobile')" class="absolute right-1.5 bg-[#ff0050] hover:bg-[#ff2a6d] w-10 h-10 rounded-full flex items-center justify-center text-white transition-transform active:scale-90 outline-none">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
         </div>
         
-        <button onclick="handleSearch('mobile')" class="w-[240px] mt-4 bg-gradient-to-r from-[#ff0050] to-[#ff2a6d] text-white py-3 rounded-full font-black text-xs tracking-wider shadow-lg active:scale-[0.98] outline-none">FILTER FEED</button>
-        
-        <div id="mobile-tag-label" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-4 mb-1 hidden w-full text-center">Active Filters:</div>
-        <div id="mobile-active-tags" class="flex flex-wrap justify-center gap-1.5 mb-2 w-full"></div>
-        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-[240px] mt-2 bg-white/5 text-gray-300 py-2.5 rounded-full border border-white/5 font-semibold text-xs hidden">Reset to Default Feed</button>
+        <div class="flex items-start justify-between w-full max-w-[300px] mt-5 gap-2">
+            <div id="mobile-active-tags" class="flex flex-wrap justify-center gap-1.5 flex-1"></div>
+            <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="hidden flex-shrink-0 bg-white/10 hover:bg-[#ff0050] p-2 rounded-full text-gray-300 hover:text-white transition-colors outline-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+        </div>
     </div>
 
     <div class="hidden md:flex absolute right-12 top-1/2 transform -translate-y-1/2 flex-col gap-5 z-40">
         <button onclick="scrollFeed(-1)" class="modern-btn p-4 rounded-full group outline-none" title="Previous Video">
-            <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path>
-            </svg>
+            <svg class="w-6 h-6 text-white group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path></svg>
         </button>
         <button onclick="scrollFeed(1)" class="modern-btn p-4 rounded-full group outline-none" title="Next Video">
-            <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
-            </svg>
+            <svg class="w-6 h-6 text-white group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
         </button>
     </div>
 
@@ -407,7 +245,7 @@
         let isFetching = false;
         let isGlobalMuted = true; 
         let wasManuallyPaused = false; 
-        let isWaitingForNextVideo = false; // වීඩියෝවක් නොමැතිව ස්ක්‍රෝල් සිරවී ඇති බව හඳුනාගැනීමට
+        let isWaitingForNextVideo = false; // මෙය Auto-scroll වළක්වා ගැනීමට භාවිතා කරයි
         
         let seenVideoIds = [];
         try {
@@ -421,8 +259,8 @@
         const bottomLoader = document.getElementById('bottom-loader');
         const globalPlayer = document.getElementById('global-player');
 
-        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L4.5 9H1.5v6h3l4.5 3.75V5.25z" /></svg>`;
-        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>`;
+        const iconMuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L4.5 9H1.5v6h3l4.5 3.75V5.25z" /></svg>`;
+        const iconUnmuted = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" /></svg>`;
 
         function shuffleArray(array) {
             let arr = [...array];
@@ -516,7 +354,7 @@
                     
                     <div class="video-slot absolute inset-0 z-10 bg-cover bg-center" style="background-image: url('${videoData.cover}');"></div>
                     
-                    <button class="mute-btn absolute top-6 right-5 w-10 h-10 flex items-center justify-center z-40 outline-none rounded-full text-white transition-transform active:scale-95">
+                    <button class="mute-btn absolute top-6 right-5 flex items-center justify-center z-40 outline-none text-white transition-transform active:scale-95 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                         ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
                     
@@ -580,18 +418,30 @@
             });
         }, { threshold: 0.5 }); 
 
-        // Bottom Loader එක Screen එකට ආ විට ඊළඟ වීඩියෝවක් එනතුරු බලා සිටින තත්ත්වය ක්‍රියාත්මක කිරීම
-        const loaderObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    if (currentActiveIndex >= loadedVideosData.length - 1) {
-                        isWaitingForNextVideo = true;
-                        if (!isFetching) fetchNextVideo();
-                    }
+        // පරිශීලකයා ලෝඩරය වෙත හිතාමතා ස්ක්‍රෝල් කළොත් පමණක් 'isWaitingForNextVideo' සත්‍ය වේ.
+        feedContainer.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = feedContainer;
+            
+            // පරිශීලකයා තිරයේ පහළටම (bottomLoader මතට) ස්ක්‍රෝල් කර ඇත්නම්...
+            if (scrollTop + clientHeight >= scrollHeight - 5) {
+                if (currentActiveIndex >= loadedVideosData.length - 1) {
+                    isWaitingForNextVideo = true;
                 }
-            });
-        }, { threshold: 0.05 });
-        loaderObserver.observe(bottomLoader);
+            } else {
+                isWaitingForNextVideo = false;
+            }
+
+            if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
+                if(!isFetching) fetchNextVideo();
+            }
+        });
+
+        // X බොත්තම එබූ විට හැෂ්ටැග් එකින් එක ඉවත් කිරීමේ ශ්‍රිතය
+        function removeTag(tagToRemove) {
+            customTags = customTags.filter(t => t !== tagToRemove);
+            updateSearchUI();
+            reloadFeedWithFilters();
+        }
 
         function handleSearch(mode) {
             const inputId = mode === 'desktop' ? 'desktop-search-input' : 'mobile-search-input';
@@ -602,7 +452,10 @@
             const parsedTags = rawInput.split(/[\s,]+/).map(t => t.trim().replace('#', '')).filter(t => t.length > 0);
             if (parsedTags.length === 0) return;
             
-            customTags = parsedTags;
+            // අලුතින් එකතු කරන ටැග් පවතින ලිස්ට් එකට එකතු කරයි (Duplicates මගහරියි)
+            parsedTags.forEach(t => {
+                if(!customTags.includes(t)) customTags.push(t);
+            });
             document.getElementById(inputId).value = '';
             
             updateSearchUI();
@@ -624,11 +477,17 @@
             const mobileActive = document.getElementById('mobile-active-tags');
             const desktopReset = document.getElementById('desktop-reset-btn');
             const mobileReset = document.getElementById('mobile-reset-btn');
-            const mobileLabel = document.getElementById('mobile-tag-label');
             
             let html = '';
             customTags.forEach(tag => {
-                html += `<span class="bg-white/5 text-[11px] px-2.5 py-1 rounded-full border border-white/10 text-[#00f2fe] font-semibold">#${tag}</span>`;
+                // 'X' Button සහිත හැෂ්ටැග් එක
+                html += `
+                <span class="inline-flex items-center gap-1.5 bg-black/50 text-[11px] pl-2.5 pr-1 py-1 rounded-full border border-white/20 text-[#00f2fe] font-bold shadow-sm">
+                    #${tag}
+                    <button onclick="removeTag('${tag}')" class="text-gray-300 hover:text-white bg-white/10 hover:bg-[#ff0050] rounded-full w-4 h-4 flex items-center justify-center outline-none transition-colors">
+                        <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </span>`;
             });
             
             desktopActive.innerHTML = html;
@@ -637,11 +496,9 @@
             if (customTags.length > 0) {
                 desktopReset.classList.remove('hidden');
                 mobileReset.classList.remove('hidden');
-                mobileLabel.classList.remove('hidden');
             } else {
                 desktopReset.classList.add('hidden');
                 mobileReset.classList.add('hidden');
-                mobileLabel.classList.add('hidden');
             }
         }
 
@@ -660,9 +517,8 @@
         async function reloadFeedWithFilters() {
             globalPlayer.pause();
             globalPlayer.style.display = 'none';
-            isWaitingForNextVideo = false;
+            isWaitingForNextVideo = false; // රීලෝඩ් කිරීමේදී Auto-scroll වළක්වයි
             
-            // නව සර්ච් එකකදී පළමු වීඩියෝව ලෝඩ් වනතුරු මොබයිල් සර්ච් අයිකනය සඟවයි
             const mobSearch = document.getElementById('mobile-search-trigger-btn');
             if (mobSearch) mobSearch.classList.add('hidden');
             
@@ -710,7 +566,6 @@
             
             feedContainer.scrollTop = 0;
             
-            await fetchNextVideo();
             await fetchNextVideo();
             await fetchNextVideo();
         }
@@ -795,17 +650,17 @@
             if (firstPlaceholder) {
                 firstPlaceholder.replaceWith(container);
                 
-                // පළමු වීඩියෝව සාර්ථකව ආ පසු මොබයිල් සර්ච් අයිකනය පෙන්වයි
                 const mobSearch = document.getElementById('mobile-search-trigger-btn');
                 if (mobSearch) mobSearch.classList.remove('hidden');
                 
                 bottomLoader.classList.remove('hidden');
                 bottomLoader.style.display = 'flex';
-                // පළමු වීඩියෝව කිසිවිටෙකත් ස්වයංක්‍රීයව ස්ක්‍රෝල් නොවේ.
+                // පළමු වීඩියෝව auto-scroll නොවේ (scrollIntoView භාවිතා කර නැත).
             } else {
                 feedContainer.insertBefore(container, bottomLoader);
                 
-                // පරිශීලකයා ලෝඩ් වී ඇති සීමාව අවසන් වී, ලෝඩරය ළඟ සිරවී සිටි අවස්ථාවක පමණක් auto scroll වේ.
+                // පරිශීලකයා පහළටම ස්ක්‍රෝල් කරගෙන ගොස් ලෝඩරය දෙස බලා සිටී නම් පමණක්,
+                // අලුත් වීඩියෝව යට ඉඳන් උඩට ස්ක්‍රෝල් වේ.
                 if (isWaitingForNextVideo) {
                     isWaitingForNextVideo = false;
                     setTimeout(() => {
@@ -816,13 +671,6 @@
             
             videoObserver.observe(container);
         }
-
-        feedContainer.addEventListener('scroll', () => {
-            const { scrollTop, scrollHeight, clientHeight } = feedContainer;
-            if (scrollTop + clientHeight >= scrollHeight - clientHeight * 1.5) {
-                if(!isFetching) fetchNextVideo();
-            }
-        });
 
         function unlockAutoplay() {
             globalPlayer.play().catch(e => console.log(e));
@@ -843,7 +691,6 @@
                     await fetchNextVideo();
                 }
                 
-                // පසුබිමෙන් තව වීඩියෝ 2ක් Buffer කර තබාගනී (ස්වයංක්‍රීයව ස්ක්‍රෝල් නොවේ)
                 await fetchNextVideo(); 
                 await fetchNextVideo();
                 
