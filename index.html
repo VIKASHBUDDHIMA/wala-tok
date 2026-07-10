@@ -42,12 +42,12 @@
         video::-webkit-media-controls { display: none !important; opacity: 0 !important; }
         video::-webkit-media-controls-start-playback-button { display: none !important; opacity: 0 !important; -webkit-appearance: none; }
 
-        /* --- FIRE LOADER ANIMATION (SMALLER SIZE & RED THEME) --- */
+        /* --- FIRE LOADER ANIMATION (50% SMALLER SIZE) --- */
         .fire-wrapper {
             position: relative;
             width: 50px;
             height: 50px;
-            transform: scale(0.5); /* 50% කින් කුඩා කර ඇත */
+            transform: scale(0.5);
             transform-origin: center;
         }
 
@@ -195,6 +195,7 @@
             pointer-events: none; 
         }
         
+        /* Desktop Button UI */
         .modern-btn {
             background: rgba(12, 12, 15, 0.65);
             backdrop-filter: blur(14px);
@@ -207,54 +208,83 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             transform: scale(1.05);
         }
-        
-        /* --- UIVERSE CUSTOM SEARCH BAR (DARK & RED THEME) --- */
-        .custom-search-input {
-            display: block;
+
+        /* --- NEW UIVERSE SEARCH BAR STYLING (GARERIM STYLE - DARK TRANSFORMATION) --- */
+        .container-input {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .custom-input-bar {
+            width: 160px;
+            padding: 11px 15px 11px 42px;
+            border-radius: 9999px;
+            border: solid 1px rgba(255, 255, 255, 0.15);
+            background: rgba(25px, 25px, 30px, 0.8);
             color: #ffffff;
-            background: linear-gradient(142.99deg, rgba(30, 30, 35, 0.75) 15.53%, rgba(15, 15, 20, 0.85) 88.19%);
-            box-shadow: 0px 12px 24px -1px rgba(255, 0, 80, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 50px;
-            block-size: 20px;
-            margin: 7px auto;
-            padding: 18px 15px;
+            transition: all .3s ease-in-out;
             outline: none;
-            text-align: center;
-            width: 200px;
-            transition: 0.5s;
-            box-sizing: content-box;
-            font-size: 13px;
+            opacity: 0.85;
+            font-size: 13.5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        .custom-search-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+        .container-input svg {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translate(0, -50%);
+            fill: rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease-in-out;
         }
 
-        .custom-search-input:hover {
+        .custom-input-bar:focus {
+            opacity: 1;
             width: 240px;
-            border-color: rgba(255, 0, 80, 0.3);
-            box-shadow: 0px 12px 24px -1px rgba(255, 0, 80, 0.25);
-        }
-
-        .custom-search-input:focus {
-            width: 260px;
             border-color: #ff0050;
-            box-shadow: 0px 12px 24px -1px rgba(255, 0, 80, 0.4);
+            box-shadow: 0 0 18px rgba(255, 0, 80, 0.35);
         }
 
-        /* Mobile Adjustments for Search Bar */
-        @media (max-width: 768px) {
-            .custom-search-input:focus { width: 230px; }
-            .custom-search-input:hover { width: 230px; }
+        .custom-input-bar:focus + svg {
+            fill: #ff0050;
+            transform: translate(0, -50%) scale(1.1);
         }
-        /* ------------------------------------------- */
 
         .search-panel-glass {
-            background: rgba(10, 10, 12, 0.82);
+            background: rgba(10, 10, 12, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.09);
+        }
+
+        /* --- MOBILE OVERRIDES: REMOVE BLUR & BACKGROUND FROM INTERACTION BUTTONS --- */
+        @media (max-width: 768px) {
+            .mobile-search-trigger {
+                background: transparent !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                width: auto !important;
+                height: auto !important;
+            }
+            .mute-btn {
+                background: transparent !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                width: auto !important;
+                height: auto !important;
+                top: 24px !important;
+                right: 24px !important;
+            }
+            .custom-input-bar:focus {
+                width: 210px;
+            }
         }
     </style>
 </head>
@@ -267,41 +297,52 @@
     </div>
 
     <div class="hidden md:block absolute top-24 left-10 z-50 w-auto search-panel-glass px-6 py-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center">
-        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center w-full">Filter Feed by Tags</div>
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 text-center w-full">Filter Feed by Tags</div>
         
-        <input type="text" id="desktop-search-input" placeholder="e.g. funny sl dance" class="custom-search-input">
+        <div class="container-input">
+            <input type="text" id="desktop-search-input" placeholder="Search hashtags" class="custom-input-bar">
+            <svg width="18px" height="18px" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
+                <path d="M790.588 1468.235c-373.722 0-677.647-303.924-677.647-677.647 0-373.722 303.925-677.647 677.647-677.647 373.723 0 677.647 303.925 677.647 677.647 0 373.723-303.924 677.647-677.647 677.647Zm596.781-160.715c120.396-138.692 193.807-319.285 193.807-516.932C1581.176 354.748 1226.428 0 790.588 0S0 354.748 0 790.588s354.748 790.588 790.588 790.588c197.647 0 378.24-73.411 516.932-193.807l516.028 516.142 79.963-79.963-516.142-516.028Z" fill-rule="evenodd"></path>
+            </svg>
+        </div>
         
-        <button onclick="handleSearch('desktop')" class="w-[200px] mt-2 bg-gradient-to-r from-[#ff0050] to-[#00f2fe] hover:opacity-95 text-white py-2.5 rounded-full text-xs font-bold tracking-wide shadow-lg transition-all active:scale-[0.98] outline-none">APPLY HASHTAGS</button>
+        <button onclick="handleSearch('desktop')" class="w-full mt-4 bg-gradient-to-r from-[#ff0050] to-[#ff2a6d] hover:brightness-110 text-white py-2.5 rounded-full text-xs font-black tracking-wider shadow-[0_4px_15px_rgba(255,0,80,0.3)] transition-all active:scale-[0.98] outline-none">SEARCH NOW</button>
         
         <div id="desktop-active-tags" class="flex flex-wrap justify-center gap-1.5 mt-3 max-h-24 overflow-y-auto w-full"></div>
-        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-[200px] mt-2 bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] py-2 rounded-full transition-colors font-semibold border border-white/5 hidden">Reset to Sheet Feed</button>
+        <button onclick="resetSearch()" id="desktop-reset-btn" class="w-full mt-2 bg-white/5 hover:bg-white/10 text-gray-300 text-[11px] py-2 rounded-full transition-colors font-semibold border border-white/5 hidden">Reset to Sheet Feed</button>
     </div>
 
-    <div class="block md:hidden fixed top-5 left-5 z-50">
-        <button onclick="toggleMobileSearch(true)" class="modern-btn w-11 h-11 flex items-center justify-center rounded-full outline-none shadow-[0_4px_15px_rgba(0,0,0,0.6)] active:scale-90">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 011-14 0"></path>
+    <div class="block md:hidden fixed top-6 left-6 z-50">
+        <button onclick="toggleMobileSearch(true)" class="modern-btn mobile-search-trigger outline-none active:scale-90 flex items-center justify-center">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="11" cy="11" r="6" stroke-linecap="round" stroke-linejoin="round"></circle>
+                <line x1="16" y1="16" x2="22" y2="22" stroke-linecap="round" stroke-linejoin="round"></line>
             </svg>
         </button>
     </div>
 
     <div id="mobile-search-overlay" class="fixed inset-x-0 top-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-start items-center p-6 border-b border-white/10 transition-all duration-300 transform -translate-y-full hidden shadow-[0_25px_5px_rgba(0,0,0,0.9)]">
-        <div class="flex justify-between items-center w-full mb-4">
+        <div class="flex justify-between items-center w-full mb-5">
             <div>
                 <h2 class="text-md font-black text-white tracking-wide uppercase">Hashtag Filters</h2>
             </div>
             <button onclick="toggleMobileSearch(false)" class="text-gray-400 hover:text-white bg-white/5 p-2 rounded-full outline-none">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
         
-        <input type="text" id="mobile-search-input" placeholder="e.g. funny sl dance" class="custom-search-input">
+        <div class="container-input">
+            <input type="text" id="mobile-search-input" placeholder="Search hashtags" class="custom-input-bar">
+            <svg width="18px" height="18px" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
+                <path d="M790.588 1468.235c-373.722 0-677.647-303.924-677.647-677.647 0-373.722 303.925-677.647 677.647-677.647 373.723 0 677.647 303.925 677.647 677.647 0 373.723-303.924 677.647-677.647 677.647Zm596.781-160.715c120.396-138.692 193.807-319.285 193.807-516.932C1581.176 354.748 1226.428 0 790.588 0S0 354.748 0 790.588s354.748 790.588 790.588 790.588c197.647 0 378.24-73.411 516.932-193.807l516.028 516.142 79.963-79.963-516.142-516.028Z" fill-rule="evenodd"></path>
+            </svg>
+        </div>
         
-        <button onclick="handleSearch('mobile')" class="w-[230px] mt-4 bg-gradient-to-r from-[#ff0050] to-[#00f2fe] text-white py-3.5 rounded-full font-bold text-sm shadow-xl active:scale-[0.98] outline-none">FILTER FEED</button>
+        <button onclick="handleSearch('mobile')" class="w-[240px] mt-4 bg-gradient-to-r from-[#ff0050] to-[#ff2a6d] text-white py-3 rounded-full font-black text-xs tracking-wider shadow-lg active:scale-[0.98] outline-none">FILTER FEED</button>
         
         <div id="mobile-tag-label" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mt-4 mb-1 hidden w-full text-center">Active Filters:</div>
         <div id="mobile-active-tags" class="flex flex-wrap justify-center gap-1.5 mb-2 w-full"></div>
-        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-[230px] mt-2 bg-white/5 text-gray-300 py-3 rounded-full border border-white/5 font-semibold text-xs hidden">Reset to Default Feed</button>
+        <button onclick="resetSearch(); toggleMobileSearch(false);" id="mobile-reset-btn" class="w-[240px] mt-2 bg-white/5 text-gray-300 py-2.5 rounded-full border border-white/5 font-semibold text-xs hidden">Reset to Default Feed</button>
     </div>
 
     <div class="hidden md:flex absolute right-12 top-1/2 transform -translate-y-1/2 flex-col gap-5 z-40">
@@ -469,7 +510,7 @@
                     
                     <div class="video-slot absolute inset-0 z-10 bg-cover bg-center" style="background-image: url('${videoData.cover}');"></div>
                     
-                    <button class="mute-btn absolute top-6 right-5 w-10 h-10 flex items-center justify-center z-40 outline-none rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white shadow-lg transition-transform active:scale-95">
+                    <button class="mute-btn absolute top-6 right-5 w-10 h-10 flex items-center justify-center z-40 outline-none rounded-full text-white transition-transform active:scale-95">
                         ${isGlobalMuted ? iconMuted : iconUnmuted}
                     </button>
                     
@@ -729,13 +770,12 @@
             
             videoObserver.observe(container);
             
-            // ලෝඩරය වෙත (පහළට) Scroll කරගෙන සිටින විට අලුත් වීඩියෝවක් ආවොත්, 
-            // අනිවාර්යයෙන්ම පහළින් ඉහළට (Bottom-to-Top) scroll වීමට block: 'start' යොදා ඇත.
-            const rect = bottomLoader.getBoundingClientRect();
-            const isLoaderOnScreen = (rect.top >= 0 && rect.top < window.innerHeight);
-            if (isLoaderOnScreen && index > 0) {
+            // --- FIXED BOTTOM-TO-TOP PUSH-UP SCROLL EFFECT ON LOAD ---
+            // වීඩියෝවක් සාර්ථකව Inject වූ පසු DOM එක සකස් වීමට මිලිසෙකන්ඩ් 100ක කුඩා විරාමයක් දී,
+            // එය ස්වයංක්‍රීයවම පහළ සිට ඉහළට (Bottom-to-Top) තල්ලු කරමින් full-screen එකට scroll කරවයි.
+            setTimeout(() => {
                 container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            }, 100);
         }
 
         feedContainer.addEventListener('scroll', () => {
